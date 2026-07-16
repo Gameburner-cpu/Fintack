@@ -228,7 +228,7 @@ function renderGoals(goals) {
 
     </div>
 
-    <div style="flex:1;">
+    <div class="goal-content">
 
         <div
             style="
@@ -284,41 +284,33 @@ function renderGoals(goals) {
 
         </div>
 
-        <div
-            style="
-            display:flex;
-            gap:10px;
-            margin-top:15px;">
+        <div class="goal-actions">
 
-            <button
-    class="goal-save-btn"
-    data-id="${goal.id}">
+    <button
+        class="goal-save-btn"
+        data-id="${goal.id}">
 
-    <i class="fa-solid fa-plus"></i>
+        <i class="fa-solid fa-plus"></i>
 
-    Add Savings
+        Add Savings
 
-</button>
+    </button>
 
-            <button
-                class="small-btn edit-goal-btn"
-                data-id="${goal.id}">
+    <button
+        class="small-btn edit-goal-btn"
+        data-id="${goal.id}">
 
-                <i class="fa-solid fa-pen"></i>
+        <i class="fa-solid fa-pen"></i>
 
-            </button>
+    </button>
 
-            <button
-                class="small-btn delete-goal-btn"
-                data-id="${goal.id}">
+    <button
+        class="small-btn delete-goal-btn"
+        data-id="${goal.id}">
 
-                <i class="fa-solid fa-trash"></i>
+        <i class="fa-solid fa-trash"></i>
 
-            </button>
-
-        </div>
-
-    </div>
+    </button>
 
 </div>
 

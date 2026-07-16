@@ -686,3 +686,8 @@ window.addEventListener("click", (e) => {
 
     console.log("%cFinTack Loaded Successfully", "color:#58a6ff;font-size:18px;font-weight:bold;");
 });
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+    });
+}
