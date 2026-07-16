@@ -217,7 +217,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const body = isLogin ? { email, password } : { full_name, email, password };
 
             try {
-                const response = await fetch(`http://localhost:5000/${endpoint}`, {
+                const response = await fetch(`https://fintack.onrender.com/${endpoint}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
@@ -270,7 +270,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const data = { user_id: user.id, title, amount, category, date, type: transactionType };
 
-            await fetch("http://localhost:5000/api/transactions", {
+            await fetch("https://fintack.onrender.com/api/transactions", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
@@ -298,7 +298,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            const response = await fetch(`http://localhost:5000/api/goals/${selectedGoalId}/savings`, {
+            const response = await fetch(`https://fintack.onrender.com/api/goals/${selectedGoalId}/savings`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ amount })
@@ -340,7 +340,7 @@ if (editGoalForm) {
     editGoalForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const response = await fetch(
-            `http://localhost:5000/api/goals/${editingGoalId}`,
+            `https://fintack.onrender.com/api/goals/${editingGoalId}`,
 
             {
                 method: "PUT",
@@ -660,7 +660,7 @@ window.addEventListener("click", (e) => {
     async function deleteGoal(id) {
         if (!confirm("Delete this goal?")) return;
         
-        const response = await fetch(`http://localhost:5000/api/goals/${id}`, { method: "DELETE" });
+        const response = await fetch(`https://fintack.onrender.com/api/goals/${id}`, { method: "DELETE" });
         const result = await response.json();
 
         if (!result.success) {

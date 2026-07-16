@@ -11,7 +11,7 @@ async function fetchDashboardData() {
     try {
 
         const response = await fetch(
-            "http://localhost:5000/api/dashboard"
+            "https://fintack.onrender.com/api/dashboard"
         );
 
         if (!response.ok) {
@@ -47,7 +47,7 @@ async function fetchTransactions(userId) {
 
         const response = await fetch(
 
-            `http://localhost:5000/api/transactions/${userId}`
+            `https://fintack.onrender.com/api/transactions/${userId}`
 
         );
 
@@ -85,7 +85,7 @@ async function fetchGoals(userId) {
     try {
 
         const response = await fetch(
-            `http://localhost:5000/api/goals/${userId}`
+            `https://fintack.onrender.com/api/goals/${userId}`
         );
 
         if (!response.ok) {
@@ -120,7 +120,7 @@ async function addTransaction(transaction) {
 
         const response = await fetch(
 
-            "http://localhost:5000/api/transactions",
+            "https://fintack.onrender.com/api/transactions",
 
             {
 
