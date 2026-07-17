@@ -1,1468 +1,723 @@
 /* =========================================================
-                FINTACK COMPONENTS.CSS
-                    PART 1
+                FINTACK COMPONENTS CSS
 =========================================================*/
+
+/* =========================================================
+                    LAYOUT & SCROLLING
+=========================================================*/
+.horizontal-scroll {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding: 5px 2px 10px;
+  scrollbar-width: none;
+}
+
+.horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.vertical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
 
 /* =========================================================
                     STOCK CARDS
 =========================================================*/
-
-.horizontal-scroll{
-
-display:flex;
-
-gap:18px;
-
-overflow-x:auto;
-
-padding:5px 2px 10px;
-
-scrollbar-width:none;
-
+.stock-card {
+  min-width: 210px;
+  background: linear-gradient(145deg, #171d28, #202938);
+  border-radius: 24px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
-.horizontal-scroll::-webkit-scrollbar{
-
-display:none;
-
+.stock-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-blue);
 }
 
-.stock-card{
-
-min-width:210px;
-
-background:linear-gradient(
-145deg,
-#171d28,
-#202938);
-
-border-radius:24px;
-
-padding:20px;
-
-border:1px solid rgba(255,255,255,.06);
-
-box-shadow:
-0 10px 25px rgba(0,0,0,.35);
-
-transition:.3s;
-
-cursor:pointer;
-
-position:relative;
-
-overflow:hidden;
-
+.stock-card::after {
+  content: "";
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(88, 166, 255, 0.05);
 }
 
-.stock-card:hover{
-
-transform:translateY(-5px);
-
-border-color:var(--accent-blue);
-
+.stock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
 }
 
-.stock-card::after{
-
-content:"";
-
-position:absolute;
-
-right:-40px;
-
-top:-40px;
-
-width:120px;
-
-height:120px;
-
-border-radius:50%;
-
-background:rgba(88,166,255,.05);
-
+.stock-ticker {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
-.stock-header{
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-margin-bottom:18px;
-
+.stock-change {
+  padding: 5px 10px;
+  border-radius: 40px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.stock-ticker{
-
-font-size:15px;
-
-font-weight:700;
-
-letter-spacing:1px;
-
+.stock-price {
+  font-size: 34px;
+  font-weight: 800;
+  margin-bottom: 12px;
 }
 
-.stock-change{
-
-padding:5px 10px;
-
-border-radius:40px;
-
-font-size:12px;
-
-font-weight:700;
-
-}
-
-.stock-price{
-
-font-size:34px;
-
-font-weight:800;
-
-margin-bottom:12px;
-
-}
-
-.stock-desc{
-
-font-size:14px;
-
-line-height:1.6;
-
-color:var(--text-secondary);
-
+.stock-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
 }
 
 /* =========================================================
                     NEWS CARDS
 =========================================================*/
-
-.vertical-list{
-
-display:flex;
-
-flex-direction:column;
-
-gap:18px;
-
+.news-card {
+  background: linear-gradient(145deg, #171d28, #202938);
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
 }
 
-.news-card{
-
-background:linear-gradient(
-145deg,
-#171d28,
-#202938);
-
-border-radius:24px;
-
-overflow:hidden;
-
-border:1px solid rgba(255,255,255,.06);
-
-box-shadow:
-0 10px 25px rgba(0,0,0,.35);
-
-transition:.3s;
-
+.news-card:hover {
+  transform: translateY(-4px);
 }
 
-.news-card:hover{
-
-transform:translateY(-4px);
-
+.news-image {
+  height: 170px;
+  background-size: cover;
+  background-position: center;
 }
 
-.news-image{
-
-height:170px;
-
-background-size:cover;
-
-background-position:center;
-
+.news-content {
+  padding: 20px;
 }
 
-.news-content{
-
-padding:20px;
-
+.news-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  margin-bottom: 12px;
+  text-transform: uppercase;
 }
 
-.news-category{
-
-display:inline-flex;
-
-align-items:center;
-
-gap:8px;
-
-font-size:12px;
-
-font-weight:700;
-
-color:var(--accent-blue);
-
-margin-bottom:12px;
-
-text-transform:uppercase;
-
+.news-title {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 14px;
 }
 
-.news-title{
-
-font-size:20px;
-
-font-weight:800;
-
-line-height:1.35;
-
-margin-bottom:14px;
-
+.news-excerpt {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
 }
 
-.news-excerpt{
-
-font-size:14px;
-
-line-height:1.7;
-
-color:var(--text-secondary);
-
-margin-bottom:18px;
-
+.news-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
-.news-footer{
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-font-size:13px;
-
-color:var(--text-secondary);
-
+.news-footer i {
+  cursor: pointer;
+  transition: 0.25s;
 }
 
-.news-footer i{
-
-cursor:pointer;
-
-transition:.25s;
-
-}
-
-.news-footer i:hover{
-
-color:var(--accent-blue);
-
+.news-footer i:hover {
+  color: var(--accent-blue);
 }
 
 /* =========================================================
-                DASHBOARD WIDGET
+                DASHBOARDS & WIDGETS
 =========================================================*/
-
-.dashboard-widget{
-
-background:linear-gradient(
-145deg,
-#171d28,
-#202938);
-
-border-radius:24px;
-
-padding:22px;
-
-border:1px solid rgba(255,255,255,.06);
-
-margin-bottom:20px;
-
-box-shadow:
-0 10px 25px rgba(0,0,0,.35);
-
+.dashboard-widget,
+.budget-card,
+.analysis-card,
+.goal-summary-card {
+  background: linear-gradient(145deg, #171d28, #202938);
+  border-radius: 24px; /* standardized across major cards */
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  margin-bottom: 20px;
 }
 
-.dashboard-widget h3{
-
-font-size:18px;
-
-margin-bottom:18px;
-
+.dashboard-widget h3,
+.budget-card h3,
+.analysis-card h3 {
+  font-size: 18px;
+  margin-bottom: 18px;
 }
 
-.dashboard-widget p{
+.dashboard-widget p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
 
-font-size:14px;
+.goal-summary-card h2 {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
 
-line-height:1.7;
+.goal-summary-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
 
-color:var(--text-secondary);
+.budget-dashboard,
+.planner-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
+.budget-value {
+  font-size: 34px;
+  font-weight: 700;
+  margin: 10px 0;
+}
+
+.budget-positive { color: var(--positive-green); }
+.budget-negative { color: var(--negative-red); }
+
+.analysis-card canvas {
+  width: 100%;
 }
 
 /* =========================================================
-                    MINI CARDS
+                    MINI CARDS & GRIDS
 =========================================================*/
-
-.mini-grid{
-
-display:grid;
-
-grid-template-columns:repeat(2,1fr);
-
-gap:15px;
-
-margin:20px 0;
-
+.mini-grid,
+.goal-stats,
+.profile-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin: 20px 0;
 }
 
-.mini-card{
-
-background:#171d28;
-
-padding:18px;
-
-border-radius:18px;
-
-border:1px solid rgba(255,255,255,.06);
-
-transition:.25s;
-
+.mini-card {
+  background: #171d28;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: 0.25s;
 }
 
-.mini-card:hover{
-
-transform:translateY(-4px);
-
+.mini-card:hover {
+  transform: translateY(-4px);
 }
 
-.mini-card h4{
-
-font-size:14px;
-
-margin-bottom:8px;
-
-color:var(--text-secondary);
-
+.mini-card h4 {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
 }
 
-.mini-card h2{
+.mini-card h2 {
+  font-size: 24px;
+}
 
-font-size:24px;
+.goal-stat,
+.profile-box {
+  background: #111722;
+  padding: 18px;
+  border-radius: 18px;
+  text-align: center;
+}
 
+.goal-stat h3,
+.profile-box h4 {
+  font-size: 13px; /* Standardized label size */
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.goal-stat h1 { font-size: 26px; }
+.profile-box h2 { font-size: 24px; }
+
+/* =========================================================
+                    BADGES & CHIPS
+=========================================================*/
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge.success {
+  background: rgba(61, 220, 151, 0.15);
+  color: var(--positive-green);
+}
+
+.badge.warning {
+  background: rgba(255, 214, 10, 0.15);
+  color: #ffd60a;
+}
+
+.badge.danger {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--negative-red);
+}
+
+.badge.info {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent-blue);
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px;
+  border-radius: 40px;
+  background: #171d28;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-chip::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--positive-green);
 }
 
 /* =========================================================
-                    BADGES
+                    BUTTONS & ICONS
 =========================================================*/
-
-.badge{
-
-display:inline-flex;
-
-align-items:center;
-
-justify-content:center;
-
-padding:6px 14px;
-
-border-radius:50px;
-
-font-size:12px;
-
-font-weight:700;
-
+.icon-btn {
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: #171d28;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.25s;
+  color: var(--text-primary);
 }
 
-.badge.success{
-
-background:rgba(61,220,151,.15);
-
-color:var(--positive-green);
-
-}
-
-.badge.warning{
-
-background:rgba(255,214,10,.15);
-
-color:#ffd60a;
-
-}
-
-.badge.danger{
-
-background:rgba(255,107,107,.15);
-
-color:var(--negative-red);
-
-}
-
-.badge.info{
-
-background:rgba(88,166,255,.15);
-
-color:var(--accent-blue);
-
+.icon-btn:hover {
+  background: var(--accent-blue);
+  color: #000;
+  transform: scale(1.08);
 }
 
 /* =========================================================
-                    STATUS CHIP
+                    LISTS & ROWS
 =========================================================*/
-
-.status-chip{
-
-display:inline-flex;
-
-align-items:center;
-
-gap:8px;
-
-padding:7px 15px;
-
-border-radius:40px;
-
-background:#171d28;
-
-font-size:13px;
-
-font-weight:600;
-
+.time-block {
+  background: #111722;
+  border-radius: 18px;
+  padding: 18px;
+  margin-top: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.status-chip::before{
+.time-block h4 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: var(--accent-blue);
+}
 
-content:"";
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
 
-width:8px;
+.result-row:last-child {
+  border-bottom: none;
+}
 
-height:8px;
+.result-row span {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
 
-border-radius:50%;
+.result-row strong {
+  font-size: 18px;
+  font-weight: 700;
+}
 
-background:var(--positive-green);
+.highlight-save strong { color: var(--negative-red); }
+.highlight-spend strong, .success strong { color: var(--positive-green); }
+.warning strong { color: #ffb84d; }
 
+.portfolio-list,
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.portfolio-item,
+.transaction-item,
+.achievement-card {
+  display: flex;
+  align-items: center;
+  background: #111722;
+  border-radius: 16px;
+  transition: 0.25s;
+}
+
+.portfolio-item:hover,
+.transaction-item:hover,
+.achievement-card:hover {
+  transform: translateX(6px);
+}
+
+.portfolio-item {
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.portfolio-item span { font-size: 15px; }
+.portfolio-item strong {
+  font-size: 16px;
+  color: var(--accent-blue);
+}
+
+.transaction-item {
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-left: 4px solid var(--accent-blue);
+}
+
+.transaction-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.transaction-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--accent-blue);
+  font-size: 18px;
+}
+
+.transaction-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.transaction-date {
+  font-size: 12px;
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
+.transaction-amount {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.transaction-income { color: var(--positive-green); }
+.transaction-expense { color: var(--negative-red); }
+
+/* =========================================================
+                    SCORE & ACHIEVEMENTS
+=========================================================*/
+.score-card {
+  text-align: center;
+  padding: 25px;
+}
+
+.score-circle {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  margin: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: conic-gradient(var(--accent-blue) 91%, rgba(255, 255, 255, 0.08) 0%);
+  padding: 10px;
+  margin-bottom: 25px;
+}
+
+.score-inner {
+  width: 100%;
+  height: 100%;
+  background: #111722;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.score-inner h1 {
+  font-size: 48px;
+  margin-bottom: 5px;
+}
+
+.score-inner span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.achievement-card {
+  gap: 15px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.achievement-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 215, 0, 0.15);
+  font-size: 22px;
+  color: #FFD700;
+}
+
+.achievement-content h4 {
+  margin-bottom: 5px;
+}
+
+.achievement-content p {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 /* =========================================================
-                    ICON BUTTON
+                    MISCELLANEOUS CARDS
 =========================================================*/
-
-.icon-btn{
-
-width:46px;
-
-height:46px;
-
-border:none;
-
-border-radius:50%;
-
-background:#171d28;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-cursor:pointer;
-
-transition:.25s;
-
-color:var(--text-primary);
-
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
 }
 
-.icon-btn:hover{
-
-background:var(--accent-blue);
-
-color:#000;
-
-transform:scale(1.08);
-
-}
-/* =========================================================
-            COMPONENTS.CSS
-                PART 2
-=========================================================*/
-
-/* =========================================================
-                GOAL PLANNER
-=========================================================*/
-
-.planner-container{
-
-display:flex;
-flex-direction:column;
-gap:20px;
-
+.empty-state i {
+  font-size: 70px;
+  color: rgba(255, 255, 255, 0.08);
+  margin-bottom: 25px;
 }
 
-.goal-summary-card{
-
-background:linear-gradient(145deg,#171d28,#202938);
-
-padding:22px;
-
-border-radius:22px;
-
-border:1px solid rgba(255,255,255,.06);
-
-box-shadow:0 10px 25px rgba(0,0,0,.35);
-
-margin-bottom:20px;
-
+.empty-state h3 {
+  margin-bottom: 12px;
 }
 
-.goal-summary-card h2{
-
-font-size:22px;
-
-margin-bottom:10px;
-
+.empty-state p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 260px;
 }
 
-.goal-summary-card p{
-
-font-size:14px;
-
-color:var(--text-secondary);
-
-line-height:1.7;
-
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 18px;
+  background: #111722;
+  border-radius: 18px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--accent-blue);
 }
 
-.goal-progress{
-
-margin-top:20px;
-
+.notification-card i {
+  font-size: 22px;
+  color: var(--accent-blue);
+  margin-top: 3px;
 }
 
-.goal-progress-value{
-
-display:flex;
-
-justify-content:space-between;
-
-margin-bottom:8px;
-
-font-size:14px;
-
+.notification-card h4 {
+  margin-bottom: 6px;
 }
 
-.goal-stats{
-
-display:grid;
-
-grid-template-columns:repeat(2,1fr);
-
-gap:15px;
-
-margin-top:20px;
-
+.notification-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
 }
 
-.goal-stat{
-
-background:#111722;
-
-padding:18px;
-
-border-radius:18px;
-
-text-align:center;
-
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  padding: 22px;
 }
 
-.goal-stat h3{
-
-font-size:14px;
-
-margin-bottom:8px;
-
-color:var(--text-secondary);
-
+.goal-progress {
+  margin-top: 20px;
 }
 
-.goal-stat h1{
-
-font-size:26px;
-
+.goal-progress-value {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
 }
 
 /* =========================================================
-            RESULT BLOCKS
+                    ANIMATIONS & HOVERS
 =========================================================*/
-
-.time-block{
-
-background:#111722;
-
-border-radius:18px;
-
-padding:18px;
-
-margin-top:18px;
-
-border:1px solid rgba(255,255,255,.05);
-
-}
-
-.time-block h4{
-
-font-size:16px;
-
-margin-bottom:16px;
-
-color:var(--accent-blue);
-
-}
-
-.result-row{
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-padding:10px 0;
-
-border-bottom:1px solid rgba(255,255,255,.05);
-
-}
-
-.result-row:last-child{
-
-border-bottom:none;
-
-}
-
-.result-row span{
-
-font-size:14px;
-
-color:var(--text-secondary);
-
-}
-
-.result-row strong{
-
-font-size:18px;
-
-font-weight:700;
-
-}
-
-.highlight-save strong{
-
-color:var(--negative-red);
-
-}
-
-.highlight-spend strong{
-
-color:var(--positive-green);
-
-}
-
-.warning strong{
-
-color:#ffb84d;
-
-}
-
-.success strong{
-
-color:var(--positive-green);
-
-}
-
-/* =========================================================
-            ANALYSIS CARDS
-=========================================================*/
-
-.analysis-card{
-
-background:linear-gradient(145deg,#171d28,#202938);
-
-border-radius:22px;
-
-padding:22px;
-
-margin-bottom:20px;
-
-border:1px solid rgba(255,255,255,.06);
-
-box-shadow:0 10px 25px rgba(0,0,0,.35);
-
-}
-
-.analysis-card h3{
-
-margin-bottom:18px;
-
-font-size:18px;
-
-}
-
-.analysis-card canvas{
-
-width:100%;
-
-}
-
-/* =========================================================
-            PORTFOLIO LIST
-=========================================================*/
-
-.portfolio-list{
-
-display:flex;
-
-flex-direction:column;
-
-gap:14px;
-
-margin-top:18px;
-
-}
-
-.portfolio-item{
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-background:#111722;
-
-padding:16px;
-
-border-radius:16px;
-
-transition:.25s;
-
-}
-
-.portfolio-item:hover{
-
-transform:translateX(6px);
-
-}
-
-.portfolio-item span{
-
-font-size:15px;
-
-}
-
-.portfolio-item strong{
-
-font-size:16px;
-
-color:var(--accent-blue);
-
-}
-
-/* =========================================================
-            FINANCIAL SCORE
-=========================================================*/
-
-.score-card{
-
-text-align:center;
-
-padding:25px;
-
-}
-
-.score-circle{
-
-width:160px;
-
-height:160px;
-
-border-radius:50%;
-
-margin:auto;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-background:conic-gradient(
-
-var(--accent-blue) 91%,
-
-rgba(255,255,255,.08) 0%
-
-);
-
-padding:10px;
-
-margin-bottom:25px;
-
-}
-
-.score-inner{
-
-width:100%;
-
-height:100%;
-
-background:#111722;
-
-border-radius:50%;
-
-display:flex;
-
-flex-direction:column;
-
-justify-content:center;
-
-align-items:center;
-
-}
-
-.score-inner h1{
-
-font-size:48px;
-
-margin-bottom:5px;
-
-}
-
-.score-inner span{
-
-font-size:13px;
-
-color:var(--text-secondary);
-
-}
-
-/* =========================================================
-            PROFILE SUMMARY
-=========================================================*/
-
-.profile-summary{
-
-display:grid;
-
-grid-template-columns:repeat(2,1fr);
-
-gap:15px;
-
-margin:20px 0;
-
-}
-
-.profile-box{
-
-background:#111722;
-
-border-radius:18px;
-
-padding:18px;
-
-text-align:center;
-
-}
-
-.profile-box h4{
-
-font-size:13px;
-
-color:var(--text-secondary);
-
-margin-bottom:8px;
-
-}
-
-.profile-box h2{
-
-font-size:24px;
-
-}
-
-/* =========================================================
-            ACHIEVEMENTS
-=========================================================*/
-
-.achievement-card{
-
-display:flex;
-
-align-items:center;
-
-gap:15px;
-
-padding:16px;
-
-background:#111722;
-
-border-radius:16px;
-
-margin-bottom:14px;
-
-transition:.25s;
-
-}
-
-.achievement-card:hover{
-
-transform:translateX(6px);
-
-}
-
-.achievement-icon{
-
-width:52px;
-
-height:52px;
-
-border-radius:50%;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-background:rgba(255,215,0,.15);
-
-font-size:22px;
-
-color:#FFD700;
-
-}
-
-.achievement-content h4{
-
-margin-bottom:5px;
-
-}
-
-.achievement-content p{
-
-font-size:13px;
-
-color:var(--text-secondary);
-
-}
-/* =========================================================
-            COMPONENTS.CSS
-                PART 3
-=========================================================*/
-
-/* =========================================================
-                BUDGET DASHBOARD
-=========================================================*/
-
-.budget-dashboard{
-
-display:flex;
-flex-direction:column;
-gap:20px;
-
-}
-
-.budget-card{
-
-background:linear-gradient(145deg,#171d28,#202938);
-
-border-radius:22px;
-
-padding:22px;
-
-border:1px solid rgba(255,255,255,.06);
-
-box-shadow:0 10px 25px rgba(0,0,0,.35);
-
-}
-
-.budget-card h3{
-
-margin-bottom:18px;
-
-font-size:18px;
-
-}
-
-.budget-value{
-
-font-size:34px;
-
-font-weight:700;
-
-margin:10px 0;
-
-}
-
-.budget-positive{
-
-color:var(--positive-green);
-
-}
-
-.budget-negative{
-
-color:var(--negative-red);
-
-}
-
-/* =========================================================
-                TRANSACTIONS
-=========================================================*/
-
-.transaction-list{
-
-display:flex;
-
-flex-direction:column;
-
-gap:14px;
-
-margin-top:20px;
-
-}
-
-.transaction-item{
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-background:#111722;
-
-padding:16px 18px;
-
-border-radius:16px;
-
-border-left:4px solid var(--accent-blue);
-
-transition:.25s;
-
-}
-
-.transaction-item:hover{
-
-transform:translateX(6px);
-
-}
-
-.transaction-left{
-
-display:flex;
-
-align-items:center;
-
-gap:14px;
-
-}
-
-.transaction-icon{
-
-width:46px;
-
-height:46px;
-
-border-radius:50%;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-background:rgba(88,166,255,.12);
-
-color:var(--accent-blue);
-
-font-size:18px;
-
-}
-
-.transaction-title{
-
-font-size:15px;
-
-font-weight:600;
-
-}
-
-.transaction-date{
-
-font-size:12px;
-
-margin-top:4px;
-
-color:var(--text-secondary);
-
-}
-
-.transaction-amount{
-
-font-size:16px;
-
-font-weight:700;
-
-}
-
-.transaction-income{
-
-color:var(--positive-green);
-
-}
-
-.transaction-expense{
-
-color:var(--negative-red);
-
-}
-
-/* =========================================================
-                EMPTY STATE
-=========================================================*/
-
-.empty-state{
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
-
-justify-content:center;
-
-text-align:center;
-
-padding:60px 20px;
-
-}
-
-.empty-state i{
-
-font-size:70px;
-
-color:rgba(255,255,255,.08);
-
-margin-bottom:25px;
-
-}
-
-.empty-state h3{
-
-margin-bottom:12px;
-
-}
-
-.empty-state p{
-
-color:var(--text-secondary);
-
-line-height:1.7;
-
-max-width:260px;
-
-}
-
-/* =========================================================
-                NOTIFICATION CARD
-=========================================================*/
-
-.notification-card{
-
-display:flex;
-
-align-items:flex-start;
-
-gap:15px;
-
-padding:18px;
-
-background:#111722;
-
-border-radius:18px;
-
-margin-bottom:16px;
-
-border-left:4px solid var(--accent-blue);
-
-}
-
-.notification-card i{
-
-font-size:22px;
-
-color:var(--accent-blue);
-
-margin-top:3px;
-
-}
-
-.notification-card h4{
-
-margin-bottom:6px;
-
-}
-
-.notification-card p{
-
-font-size:14px;
-
-line-height:1.6;
-
-color:var(--text-secondary);
-
-}
-
-/* =========================================================
-                GLASS CARD
-=========================================================*/
-
-.glass-card{
-
-background:rgba(255,255,255,.04);
-
-backdrop-filter:blur(18px);
-
--webkit-backdrop-filter:blur(18px);
-
-border-radius:24px;
-
-border:1px solid rgba(255,255,255,.08);
-
-box-shadow:0 15px 35px rgba(0,0,0,.3);
-
-padding:22px;
-
-}
-
-/* =========================================================
-                SKELETON LOADING
-=========================================================*/
-
-.skeleton{
-
-position:relative;
-
-overflow:hidden;
-
-background:#1c2331;
-
-border-radius:14px;
-
-}
-
-.skeleton::after{
-
-content:"";
-
-position:absolute;
-
-top:0;
-
-left:-100%;
-
-width:100%;
-
-height:100%;
-
-background:linear-gradient(
-
-90deg,
-
-transparent,
-
-rgba(255,255,255,.08),
-
-transparent
-
-);
-
-animation:skeleton-loading 1.4s infinite;
-
-}
-
-@keyframes skeleton-loading{
-
-100%{
-
-left:100%;
-
-}
-
-}
-
-/* =========================================================
-                CARD HOVER EFFECT
-=========================================================*/
-
+/* Grouped hover state transitions */
 .stock-card,
 .news-card,
 .analysis-card,
 .goal-card,
 .placeholder-card,
 .budget-card,
-.dashboard-widget{
-
-transition:
-
-transform .3s ease,
-
-box-shadow .3s ease,
-
-border-color .3s ease;
-
+.dashboard-widget {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
+/* Grouped hover dropshadows */
 .stock-card:hover,
 .news-card:hover,
 .analysis-card:hover,
 .goal-card:hover,
 .placeholder-card:hover,
 .budget-card:hover,
-.dashboard-widget:hover{
+.dashboard-widget:hover {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
 
-box-shadow:
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #1c2331;
+  border-radius: 14px;
+}
 
-0 18px 40px rgba(0,0,0,.45);
+.skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: skeleton-loading 1.4s infinite;
+}
 
+@keyframes skeleton-loading {
+  100% { left: 100%; }
+}
+
+.fade-up {
+  animation: fadeUp 0.5s ease;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.35s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* =========================================================
-                FADE UP ANIMATION
+                    RESPONSIVE DESIGN
 =========================================================*/
-
-.fade-up{
-
-animation:fadeUp .5s ease;
-
-}
-
-@keyframes fadeUp{
-
-from{
-
-opacity:0;
-
-transform:translateY(18px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-/* =========================================================
-                SCALE ANIMATION
-=========================================================*/
-
-.scale-in{
-
-animation:scaleIn .35s ease;
-
-}
-
-@keyframes scaleIn{
-
-from{
-
-opacity:0;
-
-transform:scale(.9);
-
-}
-
-to{
-
-opacity:1;
-
-transform:scale(1);
-
-}
-
-}
-
-/* =========================================================
-                RESPONSIVE
-=========================================================*/
-
-@media(max-width:390px){
-
-.section-title{
-
-font-size:20px;
-
-}
-
-.stock-card{
-
-min-width:185px;
-
-}
-
-.news-title{
-
-font-size:18px;
-
-}
-
-.goal-card{
-
-padding:16px;
-
-}
-
-.goal-icon-wrapper{
-
-width:52px;
-
-height:52px;
-
-}
-
-.avatar{
-
-width:80px;
-
-height:80px;
-
-}
-
-.score-circle{
-
-width:140px;
-
-height:140px;
-
-}
-
-.score-inner h1{
-
-font-size:40px;
-
-}
-
+@media (max-width: 390px) {
+  .section-title {
+    font-size: 20px;
+  }
+  
+  .stock-card {
+    min-width: 185px;
+  }
+  
+  .news-title {
+    font-size: 18px;
+  }
+  
+  .goal-card {
+    padding: 16px;
+  }
+  
+  .goal-icon-wrapper {
+    width: 52px;
+    height: 52px;
+  }
+  
+  .avatar {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .score-circle {
+    width: 140px;
+    height: 140px;
+  }
+  
+  .score-inner h1 {
+    font-size: 40px;
+  }
 }

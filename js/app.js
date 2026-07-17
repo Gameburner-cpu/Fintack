@@ -2,50 +2,49 @@
                     FINTACK APP.JS
 ========================================================== */
 
-    document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", async () => {
     /* ======================================================
                         DOM ELEMENTS & STATE
     ====================================================== */
-
-    const savingsModal =        document.getElementById("savings-modal");
-    const savingsForm =         document.getElementById("savings-form");
-    const savingAmount =        document.getElementById("saving-amount");
-    const editGoalModal =       document.getElementById("edit-goal-modal");
-    const editGoalForm =        document.getElementById("edit-goal-form");
-    const editGoalTitle =       document.getElementById("edit-goal-title");
-    const editGoalTarget =      document.getElementById("edit-goal-target");
-    const editGoalDeadline =    document.getElementById("edit-goal-deadline");
-    const addGoalBtn =          document.getElementById("add-goal-btn");
-    const goalModal =           document.getElementById("goal-modal");
-    const goalForm =            document.getElementById("goal-form");
-    const goalTitle =           document.getElementById("goal-title");
-    const goalTarget =          document.getElementById("goal-target");
-    const goalCurrent =         document.getElementById("goal-current");
-    const goalDeadline =        document.getElementById("goal-deadline");
-
-    let editingGoalId = null;
+    const savingsModal = document.getElementById("savings-modal");
+    const savingsForm = document.getElementById("savings-form");
+    const savingAmount = document.getElementById("saving-amount");
     
-    const loginModal =          document.getElementById("login-modal");
-    const loginForm =           document.getElementById("login-form");
-    const profileName =         document.getElementById("profile-name");
-    const logoutBtn =           document.getElementById("logout-btn");
+    const editGoalModal = document.getElementById("edit-goal-modal");
+    const editGoalForm = document.getElementById("edit-goal-form");
+    const editGoalTitle = document.getElementById("edit-goal-title");
+    const editGoalTarget = document.getElementById("edit-goal-target");
+    const editGoalDeadline = document.getElementById("edit-goal-deadline");
+    
+    const addGoalBtn = document.getElementById("add-goal-btn");
+    const goalModal = document.getElementById("goal-modal");
+    const goalForm = document.getElementById("goal-form");
+    const goalTitle = document.getElementById("goal-title");
+    const goalTarget = document.getElementById("goal-target");
+    const goalCurrent = document.getElementById("goal-current");
+    const goalDeadline = document.getElementById("goal-deadline");
 
-    const navItems  =           document.querySelectorAll(".bottom-nav .nav-item");
-    const pages =               document.querySelectorAll(".view-section");
+    const loginModal = document.getElementById("login-modal");
+    const loginForm = document.getElementById("login-form");
+    const profileName = document.getElementById("profile-name");
+    const logoutBtn = document.getElementById("logout-btn");
 
-    const fabContainer =        document.getElementById("fab-container");
-    const mainFab =             document.getElementById("main-add-btn");
-    const fabIncome =           document.getElementById("fab-income");
-    const fabExpense =          document.getElementById("fab-expense");
+    const navItems = document.querySelectorAll(".bottom-nav .nav-item");
+    const pages = document.querySelectorAll(".view-section");
 
-    const transactionModal =    document.getElementById("transaction-modal");
-    const transactionTitle =    document.getElementById("transaction-title-text");
-    const transactionForm =     document.getElementById("transaction-form");
+    const fabContainer = document.getElementById("fab-container");
+    const mainFab = document.getElementById("main-add-btn");
+    const fabIncome = document.getElementById("fab-income");
+    const fabExpense = document.getElementById("fab-expense");
 
-    const expenseManager =      document.getElementById("expenses-manager");
-    const openExpenseBtn =      document.getElementById("btn-expenses");
-    const closeExpenseBtn =     document.getElementById("close-expenses");
-    const budgetForm =          document.getElementById("budget-setup-form");
+    const transactionModal = document.getElementById("transaction-modal");
+    const transactionTitle = document.getElementById("transaction-title-text");
+    const transactionForm = document.getElementById("transaction-form");
+
+    const expenseManager = document.getElementById("expenses-manager");
+    const openExpenseBtn = document.getElementById("btn-expenses");
+    const closeExpenseBtn = document.getElementById("close-expenses");
+    const budgetForm = document.getElementById("budget-setup-form");
     
     // Goals Planner Elements
     const goalCards = document.querySelectorAll(".goal-card");
@@ -60,6 +59,7 @@
 
     // State Variables
     let selectedGoalId = null;
+    let editingGoalId = null;
     let transactionType = "expense";
     let isLogin = false;
     let budget = JSON.parse(localStorage.getItem("budget_data")) || {
@@ -75,23 +75,19 @@
     const user = JSON.parse(localStorage.getItem("user"));
 
     if (token && user) {
-        loginModal.classList.add("hidden");
+        if (loginModal) loginModal.classList.add("hidden");
         if (profileName) profileName.textContent = user.full_name;
-        
-        // Load User Data
         await initializeDashboard(user.id);
     } else {
-        loginModal.classList.remove("hidden");
+        if (loginModal) loginModal.classList.remove("hidden");
     }
 
-    // Profile Fallback
     const savedUser = localStorage.getItem("fintack_user");
     if (savedUser && profileName && (!token || !user)) {
         profileName.textContent = savedUser;
     }
 
     async function initializeDashboard(userId) {
-        // Load Dashboard Data
         if (typeof fetchDashboardData === "function") {
             const dashboard = await fetchDashboardData();
             
@@ -115,7 +111,6 @@
             if (typeof renderNews === "function") renderNews(dashboard.news);
         }
 
-        // Load Transactions
         if (typeof fetchTransactions === "function") {
             const transactions = await fetchTransactions(userId);
             if (typeof renderTransactions === "function") renderTransactions(transactions);
@@ -124,7 +119,6 @@
             if (typeof updateDashboard === "function") updateDashboard(summary);
         }
 
-        // Load Goals
         if (typeof fetchGoals === "function") {
             const goals = await fetchGoals(userId);
             if (typeof renderGoals === "function") renderGoals(goals);
@@ -170,10 +164,8 @@
     }
 
     document.addEventListener("click", (e) => {
-        if (fabContainer && fabContainer.classList.contains("menu-open")) {
-            if (!fabContainer.contains(e.target)) {
-                fabContainer.classList.remove("menu-open");
-            }
+        if (fabContainer && fabContainer.classList.contains("menu-open") && !fabContainer.contains(e.target)) {
+            fabContainer.classList.remove("menu-open");
         }
     });
 
@@ -194,24 +186,6 @@
             fabContainer.classList.remove("menu-open");
         });
     }
-    if (addGoalBtn) {
-
-    addGoalBtn.addEventListener("click", () => {
-
-        document.getElementById("goal-modal").classList.remove("hidden");
-
-    });
-    goalModal.addEventListener("click", (e) => {
-
-    if (e.target === goalModal) {
-
-        goalModal.classList.add("hidden");
-
-    }
-
-});
-
-}
 
     // --- Auth Forms ---
     const switchAuth = document.getElementById("switch-auth");
@@ -274,10 +248,10 @@
             localStorage.removeItem("token");
             localStorage.removeItem("user");
             
-            loginModal.classList.remove("hidden");
+            if (loginModal) loginModal.classList.remove("hidden");
             if (document.getElementById("fullname")) document.getElementById("fullname").value = "";
-            document.getElementById("email").value = "";
-            document.getElementById("password").value = "";
+            if (document.getElementById("email")) document.getElementById("email").value = "";
+            if (document.getElementById("password")) document.getElementById("password").value = "";
             
             activatePage("home-view");
         });
@@ -304,125 +278,52 @@
             transactionForm.reset();
 
             const transactions = await fetchTransactions(user.id);
-            renderTransactions(transactions);
-            updateDashboard(calculateSummary(transactions));
+            if (typeof renderTransactions === "function") renderTransactions(transactions);
+            if (typeof updateDashboard === "function") updateDashboard(calculateSummary(transactions));
         });
     }
 
-   if (goalForm) {
+    if (addGoalBtn && goalModal) {
+        addGoalBtn.addEventListener("click", () => {
+            goalModal.classList.remove("hidden");
+        });
+    }
 
-    goalForm.addEventListener("submit", async (e) => {
-
-        e.preventDefault();
-
-        const response = await fetch(
-            "https://fintack.onrender.com/api/goals",
-            {
+    if (goalForm) {
+        goalForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const response = await fetch("https://fintack.onrender.com/api/goals", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-
                     user_id: user.id,
-
-                    title: goalTitle.value.trim(),
-
-                    target_amount: Number(goalTarget.value),
-
-                    saved_amount: Number(goalCurrent.value),
-
-                    deadline: goalDeadline.value
-
-                })
-            }
-        );
-
-        const result = await response.json();
-
-        if (!result.success) {
-
-            alert(result.error || "Failed to create goal.");
-
-            return;
-
-        }
-
-        goalModal.classList.add("hidden");
-
-        goalForm.reset();
-
-        const goals = await fetchGoals(user.id);
-
-        renderGoals(goals);
-
-        updateGoalSummary(goals);
-
-        attachGoalButtonEvents();
-
-    });
-
-}
-
-    goalForm.addEventListener("submit", async (e) => {
-
-        e.preventDefault();
-
-        const response = await fetch(
-            "https://fintack.onrender.com/api/goals",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-
-                    user_id: user.id,
-
                     title: goalTitle.value,
-
                     target_amount: Number(goalTarget.value),
-
                     current_amount: Number(goalCurrent.value),
-
                     deadline: goalDeadline.value
-
                 })
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                alert(result.error || "Unable to create goal.");
+                return;
             }
-        );
 
-        const result = await response.json();
+            goalModal.classList.add("hidden");
+            goalForm.reset();
 
-        if (!result.success) {
-
-            alert(result.error || "Unable to create goal.");
-
-            return;
-
-        }
-
-        goalModal.classList.add("hidden");
-
-        goalForm.reset();
-
-        const goals = await fetchGoals(user.id);
-
-        renderGoals(goals);
-
-        updateGoalSummary(goals);
-
-        attachGoalButtonEvents();
-
-    });
-
-
+            const goals = await fetchGoals(user.id);
+            if (typeof renderGoals === "function") renderGoals(goals);
+            if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
+            attachGoalButtonEvents();
+        });
+    }
 
     if (savingsForm) {
         savingsForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            console.log("SUBMIT FIRED");
-            console.log(savingAmount);
-            console.log(savingAmount.value);
             const amount = Number(savingAmount.value);
 
             if (amount <= 0) {
@@ -446,102 +347,81 @@
             savingsForm.reset();
 
             const goals = await fetchGoals(user.id);
-            renderGoals(goals);
-            updateGoalSummary(goals);
+            if (typeof renderGoals === "function") renderGoals(goals);
+            if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
             attachGoalButtonEvents();
         });
-        
-
-document.addEventListener("keydown", (e) => {
-
-    if (e.key === "Escape") {
-
-        savingsModal.classList.add("hidden");
-
-        savingsForm.reset();
-
     }
 
-});
-    }
-    /* ==========================================
-        EDIT GOAL
-========================================== */
-
-if (editGoalForm) {
-    editGoalForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const response = await fetch(
-            `https://fintack.onrender.com/api/goals/${editingGoalId}`,
-
-            {
+    if (editGoalForm) {
+        editGoalForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const response = await fetch(`https://fintack.onrender.com/api/goals/${editingGoalId}`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     title: editGoalTitle.value,
                     target_amount: Number(editGoalTarget.value),
                     deadline: editGoalDeadline.value
                 })
+            });
+            const result = await response.json();
+            
+            if (!result.success) {
+                alert(result.error);
+                return;
             }
-        );
-        const result = await response.json();
-        if (!result.success) {
-            alert(result.error);
-            return;
+            
+            editGoalModal.classList.add("hidden");
+            editGoalForm.reset();
+            
+            const goals = await fetchGoals(user.id);
+            if (typeof renderGoals === "function") renderGoals(goals);
+            if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
+            attachGoalButtonEvents();
+        });
+    }
+
+    /* ======================================================
+            CENTRALIZED MODAL CLOSING (Click Outside & ESC)
+    ====================================================== */
+    const modals = [
+        { el: savingsModal, form: savingsForm },
+        { el: editGoalModal, form: editGoalForm },
+        { el: transactionModal, form: transactionForm },
+        { el: goalModal, form: goalForm }
+    ];
+
+    function closeModal(modalObj) {
+        if (modalObj && modalObj.el && !modalObj.el.classList.contains("hidden")) {
+            modalObj.el.classList.add("hidden");
+            if (modalObj.form) modalObj.form.reset();
         }
-        editGoalModal.classList.add("hidden");
-        editGoalForm.reset();
-        const goals = await fetchGoals(user.id);
-        renderGoals(goals);
-        updateGoalSummary(goals);
-        attachGoalButtonEvents();
+    }
+
+    window.addEventListener("click", (e) => {
+        modals.forEach(modalObj => {
+            if (e.target === modalObj.el) {
+                closeModal(modalObj);
+            }
+        });
     });
-    /* ==========================================
-        CLOSE EDIT GOAL MODAL
-========================================== */
 
-
-}
-/* ==========================================
-        CLOSE MODALS ON OUTSIDE CLICK
-========================================== */
-
-window.addEventListener("click", (e) => {
-
-    if (e.target === savingsModal) {
-
-        savingsModal.classList.add("hidden");
-        savingsForm.reset();
-
-    }
-
-    if (e.target === editGoalModal) {
-
-        editGoalModal.classList.add("hidden");
-        editGoalForm.reset();
-
-    }
-
-    if (e.target === transactionModal) {
-
-        transactionModal.classList.add("hidden");
-        transactionForm.reset();
-
-    }
-
-});
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            modals.forEach(modalObj => closeModal(modalObj));
+        }
+    });
 
     // --- Goal Planner ---
     goalCards.forEach(card => {
         card.addEventListener("click", () => {
-            plannerTitle.textContent = card.dataset.title || "Goal";
-            planTarget.value = Number(card.dataset.default || 0);
-            planIncome.value = "";
-            planDuration.value = 12;
-            planResults.classList.add("hidden");
-            plannerView.classList.remove("hidden");
+            if(plannerTitle) plannerTitle.textContent = card.dataset.title || "Goal";
+            if(planTarget) planTarget.value = Number(card.dataset.default || 0);
+            if(planIncome) planIncome.value = "";
+            if(planDuration) planDuration.value = 12;
+            if(planResults) planResults.classList.add("hidden");
+            if(plannerView) plannerView.classList.remove("hidden");
         });
     });
 
@@ -638,30 +518,36 @@ window.addEventListener("click", (e) => {
         document.getElementById("month-spent").textContent = "₹" + spent.toFixed(0);
         document.getElementById("month-remaining").textContent = "₹" + remain.toFixed(0);
         document.getElementById("daily-allowance").textContent = "₹" + (remain / 30).toFixed(0);
-        document.getElementById("budget-percent").textContent = percent.toFixed(0) + "%";
-        document.getElementById("budget-progress-fill").style.width = percent + "%";
+        
+        const percentEl = document.getElementById("budget-percent");
+        const progressFill = document.getElementById("budget-progress-fill");
+        
+        if (percentEl) percentEl.textContent = percent.toFixed(0) + "%";
+        if (progressFill) progressFill.style.width = percent + "%";
 
-        transactionList.innerHTML = "";
-        if (budget.expenses.length === 0) {
-            transactionList.innerHTML = `<div class="transaction-item"><span>No expenses added.</span></div>`;
-            return;
+        if (transactionList) {
+            transactionList.innerHTML = "";
+            if (budget.expenses.length === 0) {
+                transactionList.innerHTML = `<div class="transaction-item"><span>No expenses added.</span></div>`;
+                return;
+            }
+
+            budget.expenses.forEach((expense, index) => {
+                const row = document.createElement("div");
+                row.className = "transaction-item";
+                row.innerHTML = `
+                    <div>
+                        <strong>${expense.title}</strong><br>
+                        <small>${expense.date}</small>
+                    </div>
+                    <div>
+                        <strong>₹${expense.amount}</strong><br>
+                        <button onclick="removeExpense(${index})" style="margin-top:6px;">Delete</button>
+                    </div>
+                `;
+                transactionList.appendChild(row);
+            });
         }
-
-        budget.expenses.forEach((expense, index) => {
-            const row = document.createElement("div");
-            row.className = "transaction-item";
-            row.innerHTML = `
-                <div>
-                    <strong>${expense.title}</strong><br>
-                    <small>${expense.date}</small>
-                </div>
-                <div>
-                    <strong>₹${expense.amount}</strong><br>
-                    <button onclick="removeExpense(${index})" style="margin-top:6px;">Delete</button>
-                </div>
-            `;
-            transactionList.appendChild(row);
-        });
     }
     refreshBudget();
 
@@ -745,41 +631,30 @@ window.addEventListener("click", (e) => {
 
     function attachGoalButtonEvents() {
         document.querySelectorAll(".goal-save-btn").forEach(btn => {
-
-    console.log("Found Add Savings button:", btn);
-
-    btn.onclick = (e) => {
-
-        console.log("Add Savings clicked");
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        selectedGoalId = btn.dataset.id;
-
-        console.log("Goal ID:", selectedGoalId);
-
-        savingsModal.classList.remove("hidden");
-
-    };
-
-});
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                selectedGoalId = btn.dataset.id;
+                if(savingsModal) savingsModal.classList.remove("hidden");
+            };
+        });
 
         document.querySelectorAll(".edit-goal-btn").forEach(btn => {
-
-    btn.onclick = async (e) => {
-        e.stopPropagation();
-        editingGoalId = btn.dataset.id;
-        const goals = await fetchGoals(user.id);
-        const goal = goals.find(g => g.id == editingGoalId);
-        if (!goal) return;
-        editGoalTitle.value = goal.title;
-        editGoalTarget.value = goal.target_amount;
-        editGoalDeadline.value =
-            goal.deadline.split("T")[0];
-        editGoalModal.classList.remove("hidden");
-    };
-});
+            btn.onclick = async (e) => {
+                e.stopPropagation();
+                editingGoalId = btn.dataset.id;
+                const goals = await fetchGoals(user.id);
+                const goal = goals.find(g => g.id == editingGoalId);
+                
+                if (!goal) return;
+                
+                if (editGoalTitle) editGoalTitle.value = goal.title;
+                if (editGoalTarget) editGoalTarget.value = goal.target_amount;
+                if (editGoalDeadline) editGoalDeadline.value = goal.deadline.split("T")[0];
+                
+                if (editGoalModal) editGoalModal.classList.remove("hidden");
+            };
+        });
 
         document.querySelectorAll(".delete-goal-btn").forEach(btn => {
             btn.onclick = (e) => {
@@ -818,8 +693,12 @@ window.addEventListener("click", (e) => {
 
     console.log("%cFinTack Loaded Successfully", "color:#58a6ff;font-size:18px;font-weight:bold;");
 });
+
+// Service Worker Registration
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js");
+        navigator.serviceWorker.register("service-worker.js").catch(err => {
+            console.warn("Service Worker registration failed:", err);
+        });
     });
 }
