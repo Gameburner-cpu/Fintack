@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let selectedGoalId = null;
     let editingGoalId = null;
     let transactionType = "expense";
-    let isLogin = false;
+    let isLogin = true; // Set to true so Login is the default state
     let budget = JSON.parse(localStorage.getItem("budget_data")) || {
         income: 0,
         savings: 0,
@@ -189,16 +189,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --- Auth Forms ---
     const switchAuth = document.getElementById("switch-auth");
     const authBtn = document.getElementById("auth-btn");
+    const fullnameInput = document.getElementById("fullname");
 
     if (switchAuth) {
         switchAuth.addEventListener("click", () => {
             isLogin = !isLogin;
             if (isLogin) {
+                // Switching to LOGIN state
                 authBtn.textContent = "Login";
                 switchAuth.innerHTML = `Don't have an account? <strong>Create one</strong>`;
+                if (fullnameInput) {
+                    fullnameInput.classList.add("hidden");
+                    fullnameInput.removeAttribute("required");
+                }
             } else {
+                // Switching to SIGN UP state
                 authBtn.textContent = "Sign Up";
                 switchAuth.innerHTML = `Already have an account? <strong>Login</strong>`;
+                if (fullnameInput) {
+                    fullnameInput.classList.remove("hidden");
+                    fullnameInput.setAttribute("required", "true");
+                }
             }
         });
     }
