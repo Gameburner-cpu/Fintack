@@ -21,7 +21,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const goalForm = document.getElementById("goal-form");
     const goalTitle = document.getElementById("goal-title");
     const goalTarget = document.getElementById("goal-target");
-    const goalCurrent = document.getElementById("goal-current");
     const goalDeadline = document.getElementById("goal-deadline");
 
     const loginModal = document.getElementById("login-modal");
@@ -299,7 +298,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     user_id: user.id,
                     title: goalTitle.value,
                     target_amount: Number(goalTarget.value),
-                    current_amount: Number(goalCurrent.value),
+                    current_amount: 0, // Defaulting to 0 since the input field was removed
                     deadline: goalDeadline.value
                 })
             });
