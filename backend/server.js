@@ -513,6 +513,23 @@ app.post("/api/goals", async (req, res) => {
 
         } = req.body;
 
+        // ADD THIS HERE 👇
+        if (
+            !user_id ||
+            !title ||
+            !target_amount ||
+            !deadline
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+                error: "All fields are required."
+
+            });
+
+        }
+
         const { data, error } = await supabase
 
             .from("goals")
@@ -546,7 +563,6 @@ app.post("/api/goals", async (req, res) => {
         res.status(500).json({
 
             success: false,
-
             error: err.message
 
         });

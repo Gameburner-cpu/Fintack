@@ -280,6 +280,14 @@
                 Track your financial goals and achieve them faster with AI planning.
 
             </p>
+                 <button
+        id="add-goal-btn"
+        class="btn-primary">
+
+        <i class="fa-solid fa-plus"></i>
+        Add Goal
+
+    </button>
 
         </div>
 
@@ -1554,6 +1562,56 @@
                 class="btn-primary">
 
                 Add Savings
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+            ADD GOAL MODAL
+========================================== -->
+
+<div id="goal-modal" class="modal-overlay hidden">
+
+    <div class="modal-content">
+
+        <h2>Add New Goal</h2>
+
+        <form id="goal-form">
+
+            <input
+                type="text"
+                id="goal-title"
+                placeholder="Goal Title"
+                required>
+
+            <input
+                type="number"
+                id="goal-target"
+                placeholder="Target Amount (₹)"
+                required>
+
+            <input
+                type="number"
+                id="goal-current"
+                placeholder="Current Savings (₹)"
+                value="0"
+                required>
+
+            <input
+                type="date"
+                id="goal-deadline"
+                required>
+
+            <button
+                type="submit"
+                class="btn-primary">
+
+                Create Goal
 
             </button>
 

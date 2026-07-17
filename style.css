@@ -25,6 +25,46 @@
 
 }
 
+.goals-header-container{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.goals-header-container .section-title{
+    margin: 0;
+}
+
+.goals-header-container .section-subtitle{
+    width: 100%;
+    margin: 6px 0 0;
+    color: #8b949e;
+}
+
+#add-goal-btn{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px){
+
+    #add-goal-btn{
+        width: 100%;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+}
+
 /* ==========================================
         FAB
 ========================================== */

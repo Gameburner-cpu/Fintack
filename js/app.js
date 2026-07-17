@@ -2,44 +2,50 @@
                     FINTACK APP.JS
 ========================================================== */
 
-document.addEventListener("DOMContentLoaded", async () => {
+    document.addEventListener("DOMContentLoaded", async () => {
     /* ======================================================
                         DOM ELEMENTS & STATE
     ====================================================== */
 
-    const savingsModal = document.getElementById("savings-modal");
-    const savingsForm = document.getElementById("savings-form");
-    const savingAmount = document.getElementById("saving-amount");
-    const editGoalModal =
-    document.getElementById("edit-goal-modal");
-    const editGoalForm =document.getElementById("edit-goal-form");
-    const editGoalTitle = document.getElementById("edit-goal-title");
-    const editGoalTarget = document.getElementById("edit-goal-target");
-    const editGoalDeadline = document.getElementById("edit-goal-deadline");
+    const savingsModal =        document.getElementById("savings-modal");
+    const savingsForm =         document.getElementById("savings-form");
+    const savingAmount =        document.getElementById("saving-amount");
+    const editGoalModal =       document.getElementById("edit-goal-modal");
+    const editGoalForm =        document.getElementById("edit-goal-form");
+    const editGoalTitle =       document.getElementById("edit-goal-title");
+    const editGoalTarget =      document.getElementById("edit-goal-target");
+    const editGoalDeadline =    document.getElementById("edit-goal-deadline");
+    const addGoalBtn =          document.getElementById("add-goal-btn");
+    const goalModal =           document.getElementById("goal-modal");
+    const goalForm =            document.getElementById("goal-form");
+    const goalTitle =           document.getElementById("goal-title");
+    const goalTarget =          document.getElementById("goal-target");
+    const goalCurrent =         document.getElementById("goal-current");
+    const goalDeadline =        document.getElementById("goal-deadline");
 
     let editingGoalId = null;
     
-    const loginModal = document.getElementById("login-modal");
-    const loginForm = document.getElementById("login-form");
-    const profileName = document.getElementById("profile-name");
-    const logoutBtn = document.getElementById("logout-btn");
+    const loginModal =          document.getElementById("login-modal");
+    const loginForm =           document.getElementById("login-form");
+    const profileName =         document.getElementById("profile-name");
+    const logoutBtn =           document.getElementById("logout-btn");
 
-    const navItems = document.querySelectorAll(".bottom-nav .nav-item");
-    const pages = document.querySelectorAll(".view-section");
+    const navItems  =           document.querySelectorAll(".bottom-nav .nav-item");
+    const pages =               document.querySelectorAll(".view-section");
 
-    const fabContainer = document.getElementById("fab-container");
-    const mainFab = document.getElementById("main-add-btn");
-    const fabIncome = document.getElementById("fab-income");
-    const fabExpense = document.getElementById("fab-expense");
+    const fabContainer =        document.getElementById("fab-container");
+    const mainFab =             document.getElementById("main-add-btn");
+    const fabIncome =           document.getElementById("fab-income");
+    const fabExpense =          document.getElementById("fab-expense");
 
-    const transactionModal = document.getElementById("transaction-modal");
-    const transactionTitle = document.getElementById("transaction-title-text");
-    const transactionForm = document.getElementById("transaction-form");
+    const transactionModal =    document.getElementById("transaction-modal");
+    const transactionTitle =    document.getElementById("transaction-title-text");
+    const transactionForm =     document.getElementById("transaction-form");
 
-    const expenseManager = document.getElementById("expenses-manager");
-    const openExpenseBtn = document.getElementById("btn-expenses");
-    const closeExpenseBtn = document.getElementById("close-expenses");
-    const budgetForm = document.getElementById("budget-setup-form");
+    const expenseManager =      document.getElementById("expenses-manager");
+    const openExpenseBtn =      document.getElementById("btn-expenses");
+    const closeExpenseBtn =     document.getElementById("close-expenses");
+    const budgetForm =          document.getElementById("budget-setup-form");
     
     // Goals Planner Elements
     const goalCards = document.querySelectorAll(".goal-card");
@@ -188,6 +194,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             fabContainer.classList.remove("menu-open");
         });
     }
+    if (addGoalBtn) {
+
+    addGoalBtn.addEventListener("click", () => {
+
+        document.getElementById("goal-modal").classList.remove("hidden");
+
+    });
+    goalModal.addEventListener("click", (e) => {
+
+    if (e.target === goalModal) {
+
+        goalModal.classList.add("hidden");
+
+    }
+
+});
+
+}
 
     // --- Auth Forms ---
     const switchAuth = document.getElementById("switch-auth");
@@ -284,6 +308,114 @@ document.addEventListener("DOMContentLoaded", async () => {
             updateDashboard(calculateSummary(transactions));
         });
     }
+
+   if (goalForm) {
+
+    goalForm.addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const response = await fetch(
+            "https://fintack.onrender.com/api/goals",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+
+                    user_id: user.id,
+
+                    title: goalTitle.value.trim(),
+
+                    target_amount: Number(goalTarget.value),
+
+                    saved_amount: Number(goalCurrent.value),
+
+                    deadline: goalDeadline.value
+
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!result.success) {
+
+            alert(result.error || "Failed to create goal.");
+
+            return;
+
+        }
+
+        goalModal.classList.add("hidden");
+
+        goalForm.reset();
+
+        const goals = await fetchGoals(user.id);
+
+        renderGoals(goals);
+
+        updateGoalSummary(goals);
+
+        attachGoalButtonEvents();
+
+    });
+
+}
+
+    goalForm.addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const response = await fetch(
+            "https://fintack.onrender.com/api/goals",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+
+                    user_id: user.id,
+
+                    title: goalTitle.value,
+
+                    target_amount: Number(goalTarget.value),
+
+                    current_amount: Number(goalCurrent.value),
+
+                    deadline: goalDeadline.value
+
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!result.success) {
+
+            alert(result.error || "Unable to create goal.");
+
+            return;
+
+        }
+
+        goalModal.classList.add("hidden");
+
+        goalForm.reset();
+
+        const goals = await fetchGoals(user.id);
+
+        renderGoals(goals);
+
+        updateGoalSummary(goals);
+
+        attachGoalButtonEvents();
+
+    });
+
+}
 
     if (savingsForm) {
         savingsForm.addEventListener("submit", async (e) => {
