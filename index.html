@@ -1,26 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <link rel="manifest" href="manifest.json">
-
-    <meta name="theme-color" content="#4F9DFF">
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
-
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="theme-color" content="#4F9DFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
     <title>FinTack</title>
-
+    
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="components.css">
-
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-
 <body>
 
 <div class="app-container">
@@ -28,1599 +21,571 @@
     <!-- ==========================================
                     LOGIN MODAL
     =========================================== -->
-
     <div id="login-modal" class="modal-overlay hidden">
-
         <div class="modal-content">
-
             <i class="fa-solid fa-building-columns modal-logo"></i>
-
             <h2>Welcome to FinTack</h2>
-
-            <p>
-                Create your account or login to continue.
-            </p>
-
+            <p>Create your account or login to continue.</p>
+            
             <form id="login-form">
-
-    <input
-        type="text"
-        id="fullname"
-        placeholder="Full Name"
-        required>
-
-    <input
-        type="email"
-        id="email"
-        placeholder="Email Address"
-        required>
-
-    <input
-        type="password"
-        id="password"
-        placeholder="Password"
-        required>
-
-    <button
-        type="submit"
-        class="btn-primary"
-        id="auth-btn">
-
-        Sign Up
-
-    </button>
-
-    <p
-        id="switch-auth"
-        style="
-            margin-top:15px;
-            text-align:center;
-            cursor:pointer;
-            color:#58a6ff;">
-
-        Already have an account?
-        <strong>Login</strong>
-
-    </p>
-
-</form>
-
+                <input type="text" id="fullname" placeholder="Full Name" required>
+                <input type="email" id="email" placeholder="Email Address" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit" class="btn-primary" id="auth-btn">Sign Up</button>
+                <p id="switch-auth" style="margin-top:15px; text-align:center; cursor:pointer; color:#58a6ff;">
+                    Already have an account? <strong>Login</strong>
+                </p>
+            </form>
         </div>
-
     </div>
 
     <!-- ==========================================
                     HEADER
     =========================================== -->
-
     <header class="top-header">
-
         <div class="header-left">
-
             <i class="fa-solid fa-building-columns"></i>
-
         </div>
-
         <div class="header-center">
-
-            <h1 class="logo">
-
-                FINTACK
-
-            </h1>
-
+            <h1 class="logo">FINTACK</h1>
         </div>
-
         <div class="header-right">
-
             <i class="fa-regular fa-bell"></i>
-
         </div>
-
     </header>
 
     <!-- ==========================================
                     MAIN CONTENT
     =========================================== -->
-
     <main class="main-content">
 
-    <!-- ==========================================
-                    HOME PAGE
-    =========================================== -->
+        <!-- ==========================================
+                        HOME PAGE
+        =========================================== -->
+        <section id="home-view" class="view-section active">
+            
+            <!-- AI Search -->
+            <div class="search-container">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <input class="ai-search" type="text" placeholder="Ask FinTack AI anything...">
+            </div>
 
-    <section
-        id="home-view"
-        class="view-section active">
-
-        <!-- AI Search -->
-
-        <div class="search-container">
-
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-
-            <input
-                class="ai-search"
-                type="text"
-                placeholder="Ask FinTack AI anything...">
-
-        </div>
-
-        <!-- Quick Overview -->
-
-        <div class="stats-grid">
-
-    <div class="stat-box">
-
-        <span class="stat-label">
-            Net Worth
-        </span>
-
-        <strong
-            class="stat-value"
-            id="net-worth">
-
-            ₹0
-
-        </strong>
-
-    </div>
-
-    <div class="stat-box">
-
-        <span class="stat-label">
-            Monthly Saving
-        </span>
-
-        <strong
-            class="stat-value"
-            id="monthly-saving">
-
-            ₹0
-
-        </strong>
-
-    </div>
-
-</div>
-
-        <!-- Portfolio Card -->
-
-        <div class="results-dashboard">
-
-            <h3>
-
-                Portfolio Overview
-
-            </h3>
-
-            <div class="progress-bar">
-
-                <div
-                    class="progress"
-                    id="goal-progress-bar"
-                    style="width:0%;">
-
+            <!-- Quick Overview -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Net Worth</span>
+                    <strong class="stat-value" id="net-worth">₹0</strong>
                 </div>
-
+                <div class="stat-box">
+                    <span class="stat-label">Monthly Saving</span>
+                    <strong class="stat-value" id="monthly-saving">₹0</strong>
+                </div>
             </div>
 
-            <div
-                style="
-                display:flex;
-                justify-content:space-between;
-                margin-top:10px;">
-
-                <span>
-
-                    Goal Progress
-
-                </span>
-
-                <strong id="goal-progress">
-
-                        0%
-
-                </strong>
-
+            <!-- Portfolio Card -->
+            <div class="results-dashboard">
+                <h3>Portfolio Overview</h3>
+                <div class="progress-bar">
+                    <div class="progress" id="goal-progress-bar" style="width:0%;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                    <span>Goal Progress</span>
+                    <strong id="goal-progress">0%</strong>
+                </div>
             </div>
 
-        </div>
+            <!-- Stock News -->
+            <section class="section">
+                <h2 class="section-title">DAILY STOCK NEWS</h2>
+                <div id="stock-container" class="horizontal-scroll"></div>
+            </section>
 
-        <!-- Stock News -->
-
-        <section class="section">
-
-            <h2 class="section-title">
-
-                DAILY STOCK NEWS
-
-            </h2>
-
-            <div
-                id="stock-container"
-                class="horizontal-scroll">
-
-            </div>
-
+            <!-- Financial News -->
+            <section class="section">
+                <h2 class="section-title">RECENT TRANSACTIONS</h2>
+                <div id="transaction-container" class="vertical-list"></div>
+            </section>
+            
         </section>
-
-        <!-- Financial News -->
-
-        <section class="section">
-
-            <h2 class="section-title">
-
-                RECENT TRANSACTIONS
-
-            </h2>
-
-        <div
-            id="transaction-container"
-            class="vertical-list">
-
-        </div>
-
-        </section>
-
-    </section>
-
-<section id="goals-view" class="view-section">
-
-    <div class="goals-header-container">
-
-            <h2 class="section-title">
-
-                MY GOALS
-
-            </h2>
-
-            <p class="section-subtitle">
-
-                Track your financial goals and achieve them faster with AI planning.
-
-            </p>
-                 <button
-        id="add-goal-btn"
-        class="btn-primary">
-
-        <i class="fa-solid fa-plus"></i>
-        Add Goal
-
-    </button>
-
-        </div>
-
-        <!-- Overall Progress -->
-
-        <!-- Overall Progress -->
-
-<div class="results-dashboard">
-
-    <div
-        style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;">
-
-        <div>
-
-            <span class="stat-label">
-
-                Overall Progress
-
-            </span>
-
-            <h2
-                id="overall-progress-percent"
-                style="margin-top:5px;">
-
-                0%
-
-            </h2>
-
-        </div>
-
-        <div style="text-align:right;">
-
-            <span class="stat-label">
-
-                Active Goals
-
-            </span>
-
-            <h2
-                id="active-goals-count"
-                style="margin-top:5px;">
-
-                0
-
-            </h2>
-
-        </div>
-
-    </div>
-
-    <div
-        class="progress-bar"
-        style="margin-top:20px;">
-
-        <div
-            id="overall-progress-bar"
-            class="progress"
-            style="width:0%;">
-
-        </div>
-
-    </div>
-
-    <div
-        style="
-        display:flex;
-        justify-content:space-between;
-        margin-top:10px;">
-
-        <span id="overall-saved">
-
-            ₹0 Saved
-
-        </span>
-
-        <span id="overall-target">
-
-            ₹0 Target
-
-        </span>
-
-    </div>
-
-</div>
-
-        <!-- Goal Cards -->
-
-        <h3 class="section-title" style="font-size:18px;">
-
-    Active Goals
-
-        </h3>
-
-        <div
-            id="goals-container"
-            class="goals-grid">
-
-        </div>
-
-        <!-- AI Recommendation -->
-
-        <div class="results-dashboard">
-
-            <h3>
-
-                <i class="fa-solid fa-robot"></i>
-
-                AI Recommendation
-
-            </h3>
-
-            <p class="results-intro">
-
-                Increase your monthly savings by
-                <strong>₹5,000</strong>
-                to reach your House Goal nearly
-                <strong>5 months earlier.</strong>
-
-            </p>
-
-            <button class="btn-primary">
-
-                Optimize Plan
-
-            </button>
-
-        </div>
 
         <!-- ==========================================
-                    GOAL PLANNER
+                        GOALS PAGE
         =========================================== -->
+        <section id="goals-view" class="view-section">
+            <div class="goals-header-container">
+                <h2 class="section-title">MY GOALS</h2>
+                <p class="section-subtitle">Track your financial goals and achieve them faster with AI planning.</p>
+                <button id="add-goal-btn" class="btn-primary">
+                    <i class="fa-solid fa-plus"></i> Add Goal
+                </button>
+            </div>
 
-        <div id="goal-planner" class="sub-view hidden">
-
-            <div class="planner-inner-content">
-
-                <div class="planner-header">
-
-                    <i class="fa-solid fa-chevron-left"
-                        id="close-planner"></i>
-
-                    <h2 id="planner-title">
-
-                        Goal Planner
-
-                    </h2>
-
+            <!-- Overall Progress -->
+            <div class="results-dashboard">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span class="stat-label">Overall Progress</span>
+                        <h2 id="overall-progress-percent" style="margin-top:5px;">0%</h2>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="stat-label">Active Goals</span>
+                        <h2 id="active-goals-count" style="margin-top:5px;">0</h2>
+                    </div>
                 </div>
-
-                <form id="planner-form">
-
-                    <div class="input-group">
-
-                        <label>
-
-                            Target Amount (₹)
-
-                        </label>
-
-                        <input
-                            id="plan-target"
-                            type="number"
-                            required>
-
-                    </div>
-
-                    <div class="input-group">
-
-                        <label>
-
-                            Monthly Income (₹)
-
-                        </label>
-
-                        <input
-                            id="plan-income"
-                            type="number"
-                            required>
-
-                    </div>
-
-                    <div class="input-group">
-
-                        <label>
-
-                            Duration
-
-                        </label>
-
-                        <select
-                            id="plan-duration"
-                            class="custom-select">
-
-                            <option value="3">3 Months</option>
-                            <option value="6">6 Months</option>
-                            <option value="12" selected>12 Months</option>
-                            <option value="18">18 Months</option>
-                            <option value="24">24 Months</option>
-
-                        </select>
-
-                    </div>
-
-                    <button
-                        type="submit"
-                        class="btn-primary">
-
-                        Generate Plan
-
-                    </button>
-
-                </form>
-
-                <div
-                    id="plan-results"
-                    class="results-dashboard hidden">
-
-                    <h3>
-
-                        Financial Strategy
-
-                    </h3>
-
-                    <div class="time-block">
-
-                        <h4>Daily</h4>
-
-                        <div class="result-row">
-
-                            <span>Save</span>
-
-                            <strong id="res-day-save">₹0</strong>
-
-                        </div>
-
-                        <div class="result-row">
-
-                            <span>Spend</span>
-
-                            <strong id="res-day-spend">₹0</strong>
-
-                        </div>
-
-                    </div>
-
-                    <div class="time-block">
-
-                        <h4>Weekly</h4>
-
-                        <div class="result-row">
-
-                            <span>Save</span>
-
-                            <strong id="res-week-save">₹0</strong>
-
-                        </div>
-
-                        <div class="result-row">
-
-                            <span>Spend</span>
-
-                            <strong id="res-week-spend">₹0</strong>
-
-                        </div>
-
-                    </div>
-
-                    <div class="time-block">
-
-                        <h4>Monthly</h4>
-
-                        <div class="result-row">
-
-                            <span>Save</span>
-
-                            <strong id="res-month-save">₹0</strong>
-
-                        </div>
-
-                        <div class="result-row">
-
-                            <span>Spend</span>
-
-                            <strong id="res-month-spend">₹0</strong>
-
-                        </div>
-
-                    </div>
-
+                
+                <div class="progress-bar" style="margin-top:20px;">
+                    <div id="overall-progress-bar" class="progress" style="width:0%;"></div>
                 </div>
-
+                
+                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                    <span id="overall-saved">₹0 Saved</span>
+                    <span id="overall-target">₹0 Target</span>
+                </div>
             </div>
 
-        </div>
-
-   </section>
-
-<section id="analysis-view" class="view-section">
-
-    <div class="goals-header-container">
-
-            <h2 class="section-title">
-
-                FINANCIAL ANALYSIS
-
-            </h2>
-
-            <p class="section-subtitle">
-
-                Monitor your financial performance with smart insights.
-
-            </p>
-
-        </div>
-
-        <!-- Summary Cards -->
-
-        <div class="stats-grid">
-
-            <div class="stat-box">
-
-                <span class="stat-label">
-
-                    Net Worth
-
-                </span>
-
-                <strong class="stat-value">
-
-                    ₹4.52L
-
-                </strong>
-
-            </div>
-
-            <div class="stat-box">
-
-                <span class="stat-label">
-
-                    Investments
-
-                </span>
-
-                <strong class="stat-value">
-
-                    ₹2.30L
-
-                </strong>
-
-            </div>
-
-            <div class="stat-box">
-
-                <span class="stat-label">
-
-                    Savings
-
-                </span>
-
-                <strong class="stat-value">
-
-                    ₹1.15L
-
-                </strong>
-
-            </div>
-
-            <div class="stat-box">
-
-                <span class="stat-label">
-
-                    Expenses
-
-                </span>
-
-                <strong class="stat-value" style="color:var(--negative-red);">
-
-                    ₹43K
-
-                </strong>
-
-            </div>
-
-        </div>
-
-        <!-- Expense Chart -->
-
-        <div class="placeholder-card">
-
-            <h3>
-
-                Monthly Expense Trend
-
-            </h3>
-
-            <canvas
-                id="expenseChart"
-                height="180">
-
-            </canvas>
-
-        </div>
-
-        <!-- Portfolio Allocation -->
-
-        <div class="placeholder-card">
-
-            <h3>
-
-                Portfolio Allocation
-
-            </h3>
-
-            <canvas
-                id="portfolioChart"
-                height="220">
-
-            </canvas>
-
-        </div>
-
-        <!-- Income vs Expense -->
-
-        <div class="placeholder-card">
-
-            <h3>
-
-                Income vs Expenses
-
-            </h3>
-
-            <canvas
-                id="incomeChart"
-                height="200">
-
-            </canvas>
-
-        </div>
-
-        <!-- Spending Categories -->
-
-        <div class="results-dashboard">
-
-            <h3>
-
-                Spending Categories
-
-            </h3>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    🍔 Food
-
-                </span>
-
-                <strong>
-
-                    ₹9,000
-
-                </strong>
-
-            </div>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    ⛽ Fuel
-
-                </span>
-
-                <strong>
-
-                    ₹7,500
-
-                </strong>
-
-            </div>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    🛒 Shopping
-
-                </span>
-
-                <strong>
-
-                    ₹12,000
-
-                </strong>
-
-            </div>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    💡 Bills
-
-                </span>
-
-                <strong>
-
-                    ₹8,200
-
-                </strong>
-
-            </div>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    🎬 Entertainment
-
-                </span>
-
-                <strong>
-
-                    ₹6,300
-
-                </strong>
-
-            </div>
-
-        </div>
-
-        <!-- AI Score -->
-
-        <div class="results-dashboard">
-
-            <h3>
-
-                <i class="fa-solid fa-brain"></i>
-
-                AI Financial Health
-
-            </h3>
-
-            <div style="text-align:center;padding:15px 0;">
-
-                <h1
-                    style="
-                    font-size:72px;
-                    color:var(--accent-blue);
-                    margin-bottom:10px;">
-
-                    91
-
-                </h1>
-
-                <h3>
-
-                    Excellent
-
-                </h3>
-
+            <!-- Goal Cards -->
+            <h3 class="section-title" style="font-size:18px;">Active Goals</h3>
+            <div id="goals-container" class="goals-grid"></div>
+
+            <!-- AI Recommendation -->
+            <div class="results-dashboard">
+                <h3><i class="fa-solid fa-robot"></i> AI Recommendation</h3>
                 <p class="results-intro">
-
-                    You are spending wisely and maintaining a healthy savings rate.
-
+                    Increase your monthly savings by <strong>₹5,000</strong> to reach your House Goal nearly <strong>5 months earlier.</strong>
                 </p>
-
+                <button class="btn-primary">Optimize Plan</button>
             </div>
 
-        </div>
-
-    </section>
-
-<section id="profile-view" class="view-section">
-
-    <div class="goals-header-container">
-
-            <h2 class="section-title">
-
-                MY PROFILE
-
-            </h2>
-
-            <p class="section-subtitle">
-
-                Your financial journey at a glance.
-
-            </p>
-
-        </div>
-
-        <!-- User Card -->
-
-        <div class="placeholder-card user-info">
-
-            <div class="avatar">
-
-                <i class="fa-solid fa-user"></i>
-
-            </div>
-
-            <h2 id="profile-name">
-
-                Investor
-
-            </h2>
-
-            <p>
-
-                Premium Member
-
-            </p>
-
-        </div>
-
-        <!-- Stats -->
-
-        <div class="stats-grid">
-
-            <div class="stat-box">
-
-                <span class="stat-label">
-
-                    Monthly Income
-
-                </span>
-
-                <strong class="stat-value">
-
-                    ₹80,000
-
-                </strong>
-
-            </div>
-
-            <div class="stat-box">
-
-                <span class="stat-label">
-
-                    Monthly Saving
-
-                </span>
-
-                <strong class="stat-value">
-
-                    ₹25,000
-
-                </strong>
-
-            </div>
-
-            <div class="stat-box">
-
-                <span class="stat-label">
-
-                    Goals
-
-                </span>
-
-                <strong class="stat-value">
-
-                    5
-
-                </strong>
-
-            </div>
-
-            <div class="stat-box">
-
-                <span class="stat-label">
-
-                    Reports
-
-                </span>
-
-                <strong class="stat-value">
-
-                    18
-
-                </strong>
-
-            </div>
-
-        </div>
-
-        <!-- Achievements -->
-
-        <div class="results-dashboard">
-
-            <h3>
-
-                Achievements
-
-            </h3>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    🏆 First Goal Completed
-
-                </span>
-
-            </div>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    🔥 30 Day Saving Streak
-
-                </span>
-
-            </div>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    💰 Saved ₹1,00,000
-
-                </span>
-
-            </div>
-
-            <div class="transaction-item">
-
-                <span>
-
-                    🚀 Smart Investor
-
-                </span>
-
-            </div>
-
-        </div>
-
-        <!-- Settings -->
-
-        <div class="pill-menu">
-
-            <button class="pill-btn" id="btn-expenses">
-
-                <div class="pill-left">
-
-                    <i class="fa-solid fa-wallet"></i>
-
-                    Expenses & Budget
-
-                </div>
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-            <button class="pill-btn">
-
-                <div class="pill-left">
-
-                    <i class="fa-solid fa-chart-line"></i>
-
-                    Investments
-
-                </div>
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-            <button class="pill-btn">
-
-                <div class="pill-left">
-
-                    <i class="fa-solid fa-bell"></i>
-
-                    Notifications
-
-                </div>
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-            <button class="pill-btn">
-
-                <div class="pill-left">
-
-                    <i class="fa-solid fa-gear"></i>
-
-                    Settings
-
-                </div>
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-            <button class="pill-btn">
-
-                <div class="pill-left">
-
-                    <i class="fa-solid fa-shield-halved"></i>
-
-                    Security
-
-                </div>
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-            <button class="pill-btn">
-
-                <div class="pill-left">
-
-                    <i class="fa-solid fa-download"></i>
-
-                    Export Data
-
-                </div>
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-            <button
-                class="pill-btn danger"
-                id="logout-btn">
-
-                <div class="pill-left">
-
-                    <i class="fa-solid fa-right-from-bracket"></i>
-
-                    Logout
-
-                </div>
-
-            </button>
-
-        </div>
-
-        <!-- Budget Manager -->
-
-        <div id="expenses-manager" class="sub-view hidden">
-
-            <div class="planner-inner-content">
-
-                <div class="planner-header">
-
-                    <i
-                        class="fa-solid fa-chevron-left"
-                        id="close-expenses"></i>
-
-                    <h2>
-
-                        Budget Manager
-
-                    </h2>
-
-                </div>
-
-                <form
-                    id="budget-setup-form"
-                    class="placeholder-form">
-
-                    <div class="input-group">
-
-                        <label>
-
-                            Monthly Income
-
-                        </label>
-
-                        <input
-                            id="budget-income"
-                            type="number">
-
+            <!-- ==========================================
+                            GOAL PLANNER
+            =========================================== -->
+            <div id="goal-planner" class="sub-view hidden">
+                <div class="planner-inner-content">
+                    <div class="planner-header">
+                        <i class="fa-solid fa-chevron-left" id="close-planner"></i>
+                        <h2 id="planner-title">Goal Planner</h2>
                     </div>
+                    
+                    <form id="planner-form">
+                        <div class="input-group">
+                            <label>Target Amount (₹)</label>
+                            <input id="plan-target" type="number" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Monthly Income (₹)</label>
+                            <input id="plan-income" type="number" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Duration</label>
+                            <select id="plan-duration" class="custom-select">
+                                <option value="3">3 Months</option>
+                                <option value="6">6 Months</option>
+                                <option value="12" selected>12 Months</option>
+                                <option value="18">18 Months</option>
+                                <option value="24">24 Months</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Generate Plan</button>
+                    </form>
 
-                    <div class="input-group">
-
-                        <label>
-
-                            Monthly Savings
-
-                        </label>
-
-                        <input
-                            id="budget-savings"
-                            type="number">
-
+                    <div id="plan-results" class="results-dashboard hidden">
+                        <h3>Financial Strategy</h3>
+                        <div class="time-block">
+                            <h4>Daily</h4>
+                            <div class="result-row">
+                                <span>Save</span>
+                                <strong id="res-day-save">₹0</strong>
+                            </div>
+                            <div class="result-row">
+                                <span>Spend</span>
+                                <strong id="res-day-spend">₹0</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="time-block">
+                            <h4>Weekly</h4>
+                            <div class="result-row">
+                                <span>Save</span>
+                                <strong id="res-week-save">₹0</strong>
+                            </div>
+                            <div class="result-row">
+                                <span>Spend</span>
+                                <strong id="res-week-spend">₹0</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="time-block">
+                            <h4>Monthly</h4>
+                            <div class="result-row">
+                                <span>Save</span>
+                                <strong id="res-month-save">₹0</strong>
+                            </div>
+                            <div class="result-row">
+                                <span>Spend</span>
+                                <strong id="res-month-spend">₹0</strong>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </section>
 
-                    <button
-                        type="submit"
-                        class="btn-primary">
+        <!-- ==========================================
+                        ANALYSIS PAGE
+        =========================================== -->
+        <section id="analysis-view" class="view-section">
+            <div class="goals-header-container">
+                <h2 class="section-title">FINANCIAL ANALYSIS</h2>
+                <p class="section-subtitle">Monitor your financial performance with smart insights.</p>
+            </div>
 
-                        Save Budget
+            <!-- Summary Cards -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Net Worth</span>
+                    <strong class="stat-value">₹4.52L</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Investments</span>
+                    <strong class="stat-value">₹2.30L</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Savings</span>
+                    <strong class="stat-value">₹1.15L</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Expenses</span>
+                    <strong class="stat-value" style="color:var(--negative-red);">₹43K</strong>
+                </div>
+            </div>
 
-                    </button>
+            <!-- Charts -->
+            <div class="placeholder-card">
+                <h3>Monthly Expense Trend</h3>
+                <canvas id="expenseChart" height="180"></canvas>
+            </div>
+            
+            <div class="placeholder-card">
+                <h3>Portfolio Allocation</h3>
+                <canvas id="portfolioChart" height="220"></canvas>
+            </div>
+            
+            <div class="placeholder-card">
+                <h3>Income vs Expenses</h3>
+                <canvas id="incomeChart" height="200"></canvas>
+            </div>
 
-                </form>
+            <!-- Spending Categories -->
+            <div class="results-dashboard">
+                <h3>Spending Categories</h3>
+                <div class="transaction-item">
+                    <span>🍔 Food</span>
+                    <strong>₹9,000</strong>
+                </div>
+                <div class="transaction-item">
+                    <span>⛽ Fuel</span>
+                    <strong>₹7,500</strong>
+                </div>
+                <div class="transaction-item">
+                    <span>🛒 Shopping</span>
+                    <strong>₹12,000</strong>
+                </div>
+                <div class="transaction-item">
+                    <span>💡 Bills</span>
+                    <strong>₹8,200</strong>
+                </div>
+                <div class="transaction-item">
+                    <span>🎬 Entertainment</span>
+                    <strong>₹6,300</strong>
+                </div>
+            </div>
 
-                <div class="results-dashboard">
+            <!-- AI Score -->
+            <div class="results-dashboard">
+                <h3><i class="fa-solid fa-brain"></i> AI Financial Health</h3>
+                <div style="text-align:center;padding:15px 0;">
+                    <h1 style="font-size:72px; color:var(--accent-blue); margin-bottom:10px;">91</h1>
+                    <h3>Excellent</h3>
+                    <p class="results-intro">You are spending wisely and maintaining a healthy savings rate.</p>
+                </div>
+            </div>
+        </section>
 
-                    <h3>
+        <!-- ==========================================
+                        PROFILE PAGE
+        =========================================== -->
+        <section id="profile-view" class="view-section">
+            <div class="goals-header-container">
+                <h2 class="section-title">MY PROFILE</h2>
+                <p class="section-subtitle">Your financial journey at a glance.</p>
+            </div>
 
-                        Budget Overview
+            <!-- User Card -->
+            <div class="placeholder-card user-info">
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                <h2 id="profile-name">Investor</h2>
+                <p>Premium Member</p>
+            </div>
 
-                    </h3>
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Monthly Income</span>
+                    <strong class="stat-value">₹80,000</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Monthly Saving</span>
+                    <strong class="stat-value">₹25,000</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Goals</span>
+                    <strong class="stat-value">5</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Reports</span>
+                    <strong class="stat-value">18</strong>
+                </div>
+            </div>
 
-                    <div class="progress-bar">
+            <!-- Achievements -->
+            <div class="results-dashboard">
+                <h3>Achievements</h3>
+                <div class="transaction-item">
+                    <span>🏆 First Goal Completed</span>
+                </div>
+                <div class="transaction-item">
+                    <span>🔥 30 Day Saving Streak</span>
+                </div>
+                <div class="transaction-item">
+                    <span>💰 Saved ₹1,00,000</span>
+                </div>
+                <div class="transaction-item">
+                    <span>🚀 Smart Investor</span>
+                </div>
+            </div>
 
-                        <div
-                            id="budget-progress-fill"
-                            class="progress"
-                            style="width:0%;">
+            <!-- Settings -->
+            <div class="pill-menu">
+                <button class="pill-btn" id="btn-expenses">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-wallet"></i> Expenses & Budget
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button class="pill-btn">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-chart-line"></i> Investments
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button class="pill-btn">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-bell"></i> Notifications
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button class="pill-btn">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-gear"></i> Settings
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button class="pill-btn">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-shield-halved"></i> Security
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button class="pill-btn">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-download"></i> Export Data
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button class="pill-btn danger" id="logout-btn">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </div>
+                </button>
+            </div>
 
+            <!-- Budget Manager -->
+            <div id="expenses-manager" class="sub-view hidden">
+                <div class="planner-inner-content">
+                    <div class="planner-header">
+                        <i class="fa-solid fa-chevron-left" id="close-expenses"></i>
+                        <h2>Budget Manager</h2>
+                    </div>
+                    
+                    <form id="budget-setup-form" class="placeholder-form">
+                        <div class="input-group">
+                            <label>Monthly Income</label>
+                            <input id="budget-income" type="number">
+                        </div>
+                        <div class="input-group">
+                            <label>Monthly Savings</label>
+                            <input id="budget-savings" type="number">
+                        </div>
+                        <button type="submit" class="btn-primary">Save Budget</button>
+                    </form>
+
+                    <div class="results-dashboard" style="margin-top:20px;">
+                        <h3>Budget Overview</h3>
+                        <div class="progress-bar">
+                            <div id="budget-progress-fill" class="progress" style="width:0%;"></div>
+                        </div>
+                        
+                        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                            <span>Used</span>
+                            <strong id="budget-percent">0%</strong>
                         </div>
 
-                    </div>
-
-                    <div
-                        style="
-                        display:flex;
-                        justify-content:space-between;
-                        margin-top:10px;">
-
-                        <span>
-
-                            Used
-
-                        </span>
-
-                        <strong id="budget-percent">
-
-                            0%
-
-                        </strong>
-
-                    </div>
-
-                    <div class="stats-grid">
-
-                        <div class="stat-box">
-
-                            <span class="stat-label">
-
-                                Spent
-
-                            </span>
-
-                            <strong
-                                id="month-spent"
-                                class="stat-value">
-
-                                ₹0
-
-                            </strong>
-
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <span class="stat-label">Spent</span>
+                                <strong id="month-spent" class="stat-value">₹0</strong>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">Remaining</span>
+                                <strong id="month-remaining" class="stat-value">₹0</strong>
+                            </div>
+                            <div class="stat-box full-width">
+                                <span class="stat-label">Daily Allowance</span>
+                                <strong id="daily-allowance" class="stat-value">₹0</strong>
+                            </div>
                         </div>
 
-                        <div class="stat-box">
-
-                            <span class="stat-label">
-
-                                Remaining
-
-                            </span>
-
-                            <strong
-                                id="month-remaining"
-                                class="stat-value">
-
-                                ₹0
-
-                            </strong>
-
-                        </div>
-
-                        <div class="stat-box full-width">
-
-                            <span class="stat-label">
-
-                                Daily Allowance
-
-                            </span>
-
-                            <strong
-                                id="daily-allowance"
-                                class="stat-value">
-
-                                ₹0
-
-                            </strong>
-
-                        </div>
-
+                        <h4 style="margin-top:20px;">Today's Transactions</h4>
+                        <div id="todays-transactions" class="transaction-list"></div>
                     </div>
-
-                    <h4 style="margin-top:20px;">
-
-                        Today's Transactions
-
-                    </h4>
-
-                    <div
-                        id="todays-transactions"
-                        class="transaction-list">
-
-                    </div>
-
                 </div>
-
             </div>
+        </section>
 
+    </main>
+
+    <!-- ==========================================
+                    BOTTOM NAVIGATION
+    =========================================== -->
+    <nav class="bottom-nav">
+        <!-- Home -->
+        <a href="#" class="nav-item active" data-target="home-view">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </a>
+
+        <!-- Goals -->
+        <a href="#" class="nav-item" data-target="goals-view">
+            <i class="fa-solid fa-bullseye"></i>
+            <span>Goals</span>
+        </a>
+
+        <!-- Floating Action Button -->
+        <div class="nav-item add-button-container" id="fab-container">
+            <!-- Floating Menu -->
+            <div class="fab-menu" id="fab-menu">
+                <!-- Add Income -->
+                <button class="fab-item income" id="fab-income">
+                    <span class="fab-label">Add Income</span>
+                    <i class="fa-solid fa-money-bill-trend-up"></i>
+                </button>
+                <!-- Add Expense -->
+                <button class="fab-item expense" id="fab-expense">
+                    <span class="fab-label">Add Expense</span>
+                    <i class="fa-solid fa-arrow-trend-down"></i>
+                </button>
+            </div>
+            
+            <!-- Main FAB -->
+            <button class="add-button" id="main-add-btn">
+                <i class="fa-solid fa-plus"></i>
+            </button>
         </div>
 
-    </section>
+        <!-- Analysis -->
+        <a href="#" class="nav-item" data-target="analysis-view">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Analysis</span>
+        </a>
 
-   <!-- ==========================================
-        BOTTOM NAVIGATION
-========================================== -->
-
-</main>
-
-<nav class="bottom-nav">
-
-    <!-- Home -->
-
-    <a
-        href="#"
-        class="nav-item active"
-        data-target="home-view">
-
-        <i class="fa-solid fa-house"></i>
-
-        <span>Home</span>
-
-    </a>
-
-    <!-- Goals -->
-
-    <a
-        href="#"
-        class="nav-item"
-        data-target="goals-view">
-
-        <i class="fa-solid fa-bullseye"></i>
-
-        <span>Goals</span>
-
-    </a>
-
-    <!-- Floating Action Button -->
-
-    <div
-    class="nav-item add-button-container"
-    id="fab-container">
-
-    <!-- Floating Menu -->
-
-    <div
-        class="fab-menu"
-        id="fab-menu">
-
-        <!-- Add Income -->
-
-            <button
-                class="fab-item"
-                id="fab-income">
-
-                <span class="fab-label">
-                    Add Income
-                </span>
-
-                <i class="fa-solid fa-money-bill-trend-up"></i>
-
-            </button>
-
-        <!-- Add Expense -->
-
-        <button
-            class="fab-item expense"
-            id="fab-expense">
-
-            <span class="fab-label">
-
-                Add Expense
-
-            </span>
-
-            <i class="fa-solid fa-arrow-trend-down"></i>
-
-        </button>
-
-    </div>
-
-    <!-- Main FAB -->
-
-    <button
-        class="add-button"
-        id="main-add-btn">
-
-        <i class="fa-solid fa-plus"></i>
-
-    </button>
-
-</div>
-
-    <!-- Analysis -->
-
-    <a
-        href="#"
-        class="nav-item"
-        data-target="analysis-view">
-
-        <i class="fa-solid fa-chart-line"></i>
-
-        <span>Analysis</span>
-
-    </a>
-
-    <!-- Profile -->
-
-    <a
-        href="#"
-        class="nav-item"
-        data-target="profile-view">
-
-        <i class="fa-solid fa-user"></i>
-
-        <span>Profile</span>
-
-    </a>
-
-</nav>
+        <!-- Profile -->
+        <a href="#" class="nav-item" data-target="profile-view">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
 
 </div>
 
 <!-- ==========================================
-        JAVASCRIPT
-========================================== -->
-
+                JAVASCRIPT
+=========================================== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
 
 <!-- ==========================================
-        TRANSACTION MODAL
-========================================== -->
-
-<div
-    id="transaction-modal"
-    class="modal-overlay hidden">
-
+                TRANSACTION MODAL
+=========================================== -->
+<div id="transaction-modal" class="modal-overlay hidden">
     <div class="modal-content">
-
-        <h2 id="transaction-title-text">
-
-            Add Transaction
-
-        </h2>
-
+        <h2 id="transaction-title-text">Add Transaction</h2>
         <form id="transaction-form">
-
-            <input
-                type="text"
-                id="transaction-name"
-                placeholder="Transaction Title"
-                required>
-
-            <input
-                type="number"
-                id="transaction-amount"
-                placeholder="Amount (₹)"
-                required>
-
-            <input
-                type="text"
-                id="transaction-category"
-                placeholder="Category (Food, Salary, Fuel...)"
-                required>
-
-            <input
-                type="date"
-                id="transaction-date"
-                required>
-
-            <button
-                type="submit"
-                class="btn-primary">
-
-                Save Transaction
-
-            </button>
-
+            <input type="text" id="transaction-name" placeholder="Transaction Title" required>
+            <input type="number" id="transaction-amount" placeholder="Amount (₹)" required>
+            <input type="text" id="transaction-category" placeholder="Category (Food, Salary, Fuel...)" required>
+            <input type="date" id="transaction-date" required>
+            <button type="submit" class="btn-primary">Save Transaction</button>
         </form>
-
     </div>
-
 </div>
 
-
-
-<div
-    id="edit-goal-modal"
-    class="modal-overlay hidden">
-
+<!-- ==========================================
+                EDIT GOAL MODAL
+=========================================== -->
+<div id="edit-goal-modal" class="modal-overlay hidden">
     <div class="modal-content">
-
         <h2>Edit Goal</h2>
-
         <form id="edit-goal-form">
-
-            <input
-                type="text"
-                id="edit-goal-title"
-                placeholder="Goal Title"
-                required>
-
-            <input
-                type="number"
-                id="edit-goal-target"
-                placeholder="Target Amount"
-                required>
-
-            <input
-                type="date"
-                id="edit-goal-deadline"
-                required>
-
-            <button
-                type="submit"
-                class="btn-primary">
-
-                Save Changes
-
-            </button>
-
+            <input type="text" id="edit-goal-title" placeholder="Goal Title" required>
+            <input type="number" id="edit-goal-target" placeholder="Target Amount" required>
+            <input type="date" id="edit-goal-deadline" required>
+            <button type="submit" class="btn-primary">Save Changes</button>
         </form>
-
     </div>
-
 </div>
 
 <!-- ==========================================
-            ADD SAVINGS MODAL
-========================================== -->
-
+                ADD SAVINGS MODAL
+=========================================== -->
 <div id="savings-modal" class="modal-overlay hidden">
-
     <div class="modal-content">
-
         <h2>Add Savings</h2>
-
         <form id="savings-form">
-
-            <input
-                type="number"
-                id="saving-amount"
-                placeholder="Amount"
-                required>
-
-            <button
-                type="submit"
-                class="btn-primary">
-
-                Add Savings
-
-            </button>
-
+            <input type="number" id="saving-amount" placeholder="Amount" required>
+            <button type="submit" class="btn-primary">Add Savings</button>
         </form>
-
     </div>
-
 </div>
 
 <!-- ==========================================
-            ADD GOAL MODAL
-========================================== -->
-
+                ADD GOAL MODAL
+=========================================== -->
 <div id="goal-modal" class="modal-overlay hidden">
-
     <div class="modal-content">
-
         <h2>Add New Goal</h2>
-
         <form id="goal-form">
-
-            <input
-                type="text"
-                id="goal-title"
-                placeholder="Goal Title"
-                required>
-
-            <input
-                type="number"
-                id="goal-target"
-                placeholder="Target Amount (₹)"
-                required>
-
-            <input
-                type="number"
-                id="goal-current"
-                placeholder="Current Savings (₹)"
-                value="0"
-                required>
-
-            <input
-                type="date"
-                id="goal-deadline"
-                required>
-
-            <button
-                type="submit"
-                class="btn-primary">
-
-                Create Goal
-
-            </button>
-
+            <input type="text" id="goal-title" placeholder="Goal Title" required>
+            <input type="number" id="goal-target" placeholder="Target Amount (₹)" required>
+            
+            <!-- "Current Savings" Field Successfully Removed from Here -->
+            
+            <input type="date" id="goal-deadline" required>
+            <button type="submit" class="btn-primary">Create Goal</button>
         </form>
-
     </div>
-
 </div>
 
 </body>
-
-</html>
+</html> 
