@@ -36,6 +36,9 @@ async function handleTripIntent(message) {
             return "Please login first.";
         }
 
+        console.log("User Object:", user);
+        console.log("User ID:", user.id);
+        
         const result = await TripStorage.createTrip(
             user.id,
             tripName

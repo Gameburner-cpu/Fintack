@@ -2,7 +2,7 @@
                     TRIP STORAGE API
 ========================================================== */
 
-const TRIP_API = "https://fintack.onrender.com/api";
+const TRIP_API = "https://fintack.onrender.com/api/trips";
 
 const TripStorage = {
 
