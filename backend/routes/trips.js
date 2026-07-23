@@ -437,57 +437,49 @@ router.get("/:id/settlements", async (req, res) => {
         const tripId = req.params.id;
 
         const { data: members, error: memberError } = await supabase
-
             .from("trip_members")
-
             .select("*")
-
             .eq("trip_id", tripId);
 
         if (memberError) throw memberError;
 
         const { data: expenses, error: expenseError } = await supabase
-
             .from("trip_expenses")
-
             .select("*")
-
             .eq("trip_id", tripId);
 
         if (expenseError) throw expenseError;
 
+        console.log("========== MEMBERS ==========");
+        console.table(members);
+
+        console.log("========== EXPENSES ==========");
+        console.table(expenses);
+
         const result = calculateSettlements(
-
             members,
-
             expenses
-
         );
 
+        console.log("========== BALANCES ==========");
+        console.log(result.balances);
+
+        console.log("========== SETTLEMENTS ==========");
+        console.table(result.settlements);
+
         res.json({
-
             success: true,
-
             ...result
-
         });
 
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(error);
 
         res.status(500).json({
-
             success: false,
-
             message: error.message
-
         });
-
     }
-
 });
 
 /* ==========================================================
