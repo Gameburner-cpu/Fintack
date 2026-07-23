@@ -721,3 +721,52 @@
     font-size: 40px;
   }
 }
+/* ==========================================
+            TRIP AI CARDS
+========================================== */
+
+.trip-card{
+
+    padding:18px;
+
+}
+
+.trip-title{
+
+    font-size:20px;
+
+    font-weight:700;
+
+    margin-bottom:15px;
+
+}
+
+.trip-stat{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin:10px 0;
+
+}
+
+.trip-member{
+
+    padding:10px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.trip-settlement{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    padding:12px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}

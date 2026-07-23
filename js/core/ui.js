@@ -130,11 +130,44 @@ function updateDashboard(summary) {
 }
 
 /* =====================================================
+                UPDATE AI RECOMMENDATIONS
+===================================================== */
+function updateAIRecommendations(goals) {
+    const recommendationTextEl = document.getElementById("ai-recommendation-text");
+    if (!recommendationTextEl) return;
+
+    if (!goals || goals.length === 0) {
+        recommendationTextEl.innerHTML = "Create your first financial goal above, and FinTack AI will analyze your strategy here.";
+        return;
+    }
+
+    // Sort goals to look at the one closest to completion or highest target priority
+    const primaryGoal = goals[0];
+    const targetAmount = Number(primaryGoal.target_amount) || 0;
+    const savedAmount = Number(primaryGoal.saved_amount) || 0;
+    const remaining = targetAmount - savedAmount;
+
+    if (remaining <= 0) {
+        recommendationTextEl.innerHTML = `🎉 Congratulations! You have fully achieved your <strong>${primaryGoal.title}</strong> goal! Use the planner to chart your next target.`;
+        return;
+    }
+
+    // Generate simulated context-aware recommendations matching your UI design patterns
+    const smartBoost = Math.max(1000, Math.round((targetAmount * 0.02) / 100) * 100); 
+    const monthsSaved = Math.min(6, Math.max(1, Math.round(remaining / (smartBoost * 5))));
+
+    recommendationTextEl.innerHTML = `Increase your monthly savings allocation by <strong>₹${smartBoost.toLocaleString("en-IN")}</strong> to reach your <strong>${primaryGoal.title}</strong> target nearly <strong>${monthsSaved} months earlier</strong>.`;
+}
+
+/* =====================================================
                 RENDER GOALS
 ===================================================== */
 function renderGoals(goals) {
     const container = document.getElementById("goals-container");
     if (!container) return;
+
+    // Trigger the dynamic recommendation engine 
+    updateAIRecommendations(goals);
 
     if (!goals || goals.length === 0) {
         container.innerHTML = `

@@ -997,3 +997,283 @@ body {
     width: 100%;
   }
 }
+
+/* ==========================================
+   AI CHAT & CARD BUG FIXES (Gaps & Width)
+========================================== */
+.ai-chat-window {
+  width: 95%;
+  max-width: 420px;
+  height: 80vh;
+  max-height: 600px;
+  background: #161b22;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+}
+
+.ai-chat-header {
+  height: 70px;
+  min-height: 70px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: #0d1117;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+} 
+
+.ai-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-header-info i {
+  font-size: 22px;
+  color: #58a6ff;
+}
+
+.ai-header-info h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #fff;
+}
+
+.ai-header-info span {
+  font-size: 12px;
+  color: #9aa4b5;
+}
+
+.ai-close-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: #202938;
+  color: #cfd8e3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.ai-close-btn:hover {
+  background: #58a6ff;
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+.ai-chat-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  scroll-behavior: smooth;
+}
+
+.ai-message {
+  align-self: flex-start;
+  background: #222b38;
+  padding: 14px 18px;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 100%;
+  line-height: 1.5;
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+.ai-message > div, 
+.ai-message .purchase-analysis-wrapper, 
+.ai-message .trip-card-wrapper {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ai-message ul, .ai-message ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.ai-message li {
+  margin: 2px 0 !important;
+}
+
+.user-message {
+  align-self: flex-end;
+  background: #58a6ff;
+  color: #000;
+  padding: 14px 18px;
+  border-radius: 18px;
+  max-width: 85%;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.ai-chat-footer {
+  min-height: 70px;
+  display: flex;
+  padding: 15px;
+  gap: 10px;
+  background: #0d1117;
+  z-index: 10;
+}
+
+.ai-chat-footer input {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: #222b38;
+  color: white;
+  outline: none;
+}
+
+.ai-chat-footer button {
+  width: 52px;
+  border: none;
+  border-radius: 14px;
+  background: #58a6ff;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* ==========================================
+   AI FINANCIAL CARDS
+========================================== */
+.ai-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.ai-mini-card {
+  background: #202938;
+  padding: 14px;
+  border-radius: 16px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ai-mini-card h4 {
+  font-size: 12px;
+  color: #9aa4b5;
+  margin-bottom: 8px;
+}
+
+.ai-mini-card h2 {
+  font-size: 20px;
+  color: #58a6ff;
+}
+
+.ai-recommendation {
+  margin-top: 20px;
+  padding: 16px;
+  background: #161f2c;
+  border-left: 4px solid #58a6ff;
+  border-radius: 14px;
+  line-height: 1.6;
+}
+
+.ai-dashboard {
+  margin-top: 30px;
+}
+
+.insight-card {
+  display: flex;
+  gap: 15px;
+  padding: 16px;
+  margin-top: 12px;
+  border-radius: 16px;
+  background: #202938;
+  align-items: center;
+  transition: 0.3s;
+}
+
+.insight-card:hover {
+  transform: translateY(-3px);
+}
+
+.insight-card.success {
+  border-left: 4px solid #2ecc71;
+}
+
+.insight-card.warning {
+  border-left: 4px solid #f1c40f;
+}
+
+.insight-card.danger {
+  border-left: 4px solid #e74c3c;
+}
+
+.insight-card .icon {
+  font-size: 28px;
+}
+
+.health-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 18px;
+  background: #202938;
+}
+
+.health-score {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 30px;
+  font-weight: bold;
+  color: #58a6ff;
+  border: 6px solid #58a6ff;
+  flex-shrink: 0;
+}
+
+.ai-alerts {
+  margin-top: 25px;
+}
+
+.alert-card {
+  background: #202938;
+  padding: 18px;
+  margin-top: 12px;
+  border-radius: 16px;
+  border-left: 4px solid #58a6ff;
+  transition: 0.3s;
+}
+
+.alert-card:hover {
+  transform: translateY(-3px);
+}
+
+.alert-card.success {
+  border-color: #2ecc71;
+}
+
+.alert-card.warning {
+  border-color: #f39c12;
+}
+
+.alert-card.info {
+  border-color: #3498db;
+}

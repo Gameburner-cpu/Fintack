@@ -13,6 +13,20 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="components.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Professional Loading Placeholder Style */
+        .loading-value {
+            color: #7b8798;
+            font-weight: 700;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
 </head>
 <body>
 
@@ -66,6 +80,24 @@
     <main class="main-content">
 
         <!-- ==========================================
+                        DASHBOARD PAGE
+        =========================================== -->
+        <section id="dashboard-page" class="view-section">
+            <h1>Dashboard</h1>
+
+            <!-- AI Insights -->
+            <section class="ai-dashboard">
+                <h2>🧠 AI Insights</h2>
+                <div id="ai-insights"></div>
+            </section>
+
+            <!-- Existing dashboard cards -->
+            <div class="dashboard-summary">
+                ...
+            </div>
+        </section>
+
+        <!-- ==========================================
                         HOME PAGE
         =========================================== -->
         <section id="home-view" class="view-section active">
@@ -73,18 +105,18 @@
             <!-- AI Search -->
             <div class="search-container">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <input class="ai-search" type="text" placeholder="Ask FinTack AI anything...">
+                <input class="ai-search" id="ai-search-input" type="text" placeholder="Ask FinTack AI anything...">
             </div>
 
             <!-- Quick Overview -->
             <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-label">Net Worth</span>
-                    <strong class="stat-value" id="net-worth">₹0</strong>
+                    <strong class="stat-value loading-value" id="net-worth">--</strong>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Monthly Saving</span>
-                    <strong class="stat-value" id="monthly-saving">₹0</strong>
+                    <strong class="stat-value loading-value" id="monthly-saving">--</strong>
                 </div>
             </div>
 
@@ -96,7 +128,7 @@
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-top:10px;">
                     <span>Goal Progress</span>
-                    <strong id="goal-progress">0%</strong>
+                    <strong id="goal-progress" class="loading-value">--%</strong>
                 </div>
             </div>
 
@@ -131,11 +163,11 @@
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <span class="stat-label">Overall Progress</span>
-                        <h2 id="overall-progress-percent" style="margin-top:5px;">0%</h2>
+                        <h2 id="overall-progress-percent" class="loading-value" style="margin-top:5px;">--%</h2>
                     </div>
                     <div style="text-align:right;">
                         <span class="stat-label">Active Goals</span>
-                        <h2 id="active-goals-count" style="margin-top:5px;">0</h2>
+                        <h2 id="active-goals-count" class="loading-value" style="margin-top:5px;">--</h2>
                     </div>
                 </div>
                 
@@ -144,8 +176,8 @@
                 </div>
                 
                 <div style="display:flex; justify-content:space-between; margin-top:10px;">
-                    <span id="overall-saved">₹0 Saved</span>
-                    <span id="overall-target">₹0 Target</span>
+                    <span id="overall-saved" class="loading-value">-- Saved</span>
+                    <span id="overall-target" class="loading-value">-- Target</span>
                 </div>
             </div>
 
@@ -156,10 +188,10 @@
             <!-- AI Recommendation -->
             <div class="results-dashboard">
                 <h3><i class="fa-solid fa-robot"></i> AI Recommendation</h3>
-                <p class="results-intro">
-                    Increase your monthly savings by <strong>₹5,000</strong> to reach your House Goal nearly <strong>5 months earlier.</strong>
+                <p class="results-intro" id="ai-recommendation-text">
+                    Set up some financial goals to receive custom, optimized strategy plans from your AI assistant.
                 </p>
-                <button class="btn-primary">Optimize Plan</button>
+                <button class="btn-primary" id="ai-optimize-btn">Optimize Plan</button>
             </div>
 
             <!-- ==========================================
@@ -200,11 +232,11 @@
                             <h4>Daily</h4>
                             <div class="result-row">
                                 <span>Save</span>
-                                <strong id="res-day-save">₹0</strong>
+                                <strong id="res-day-save" class="loading-value">--</strong>
                             </div>
                             <div class="result-row">
                                 <span>Spend</span>
-                                <strong id="res-day-spend">₹0</strong>
+                                <strong id="res-day-spend" class="loading-value">--</strong>
                             </div>
                         </div>
                         
@@ -212,11 +244,11 @@
                             <h4>Weekly</h4>
                             <div class="result-row">
                                 <span>Save</span>
-                                <strong id="res-week-save">₹0</strong>
+                                <strong id="res-week-save" class="loading-value">--</strong>
                             </div>
                             <div class="result-row">
                                 <span>Spend</span>
-                                <strong id="res-week-spend">₹0</strong>
+                                <strong id="res-week-spend" class="loading-value">--</strong>
                             </div>
                         </div>
                         
@@ -224,11 +256,11 @@
                             <h4>Monthly</h4>
                             <div class="result-row">
                                 <span>Save</span>
-                                <strong id="res-month-save">₹0</strong>
+                                <strong id="res-month-save" class="loading-value">--</strong>
                             </div>
                             <div class="result-row">
                                 <span>Spend</span>
-                                <strong id="res-month-spend">₹0</strong>
+                                <strong id="res-month-spend" class="loading-value">--</strong>
                             </div>
                         </div>
                     </div>
@@ -249,19 +281,19 @@
             <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-label">Net Worth</span>
-                    <strong class="stat-value">₹4.52L</strong>
+                    <strong class="stat-value loading-value" id="analysis-networth">--</strong>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Investments</span>
-                    <strong class="stat-value">₹2.30L</strong>
+                    <strong class="stat-value loading-value" id="analysis-investments">--</strong>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Savings</span>
-                    <strong class="stat-value">₹1.15L</strong>
+                    <strong class="stat-value loading-value" id="analysis-savings">--</strong>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Expenses</span>
-                    <strong class="stat-value" style="color:var(--negative-red);">₹43K</strong>
+                    <strong class="stat-value loading-value" id="analysis-expenses" style="color:var(--negative-red);">--</strong>
                 </div>
             </div>
 
@@ -281,28 +313,11 @@
                 <canvas id="incomeChart" height="200"></canvas>
             </div>
 
-            <!-- Spending Categories -->
+            <!-- Spending Categories (Placeholders pending DB integration) -->
             <div class="results-dashboard">
                 <h3>Spending Categories</h3>
-                <div class="transaction-item">
-                    <span>🍔 Food</span>
-                    <strong>₹9,000</strong>
-                </div>
-                <div class="transaction-item">
-                    <span>⛽ Fuel</span>
-                    <strong>₹7,500</strong>
-                </div>
-                <div class="transaction-item">
-                    <span>🛒 Shopping</span>
-                    <strong>₹12,000</strong>
-                </div>
-                <div class="transaction-item">
-                    <span>💡 Bills</span>
-                    <strong>₹8,200</strong>
-                </div>
-                <div class="transaction-item">
-                    <span>🎬 Entertainment</span>
-                    <strong>₹6,300</strong>
+                <div id="spending-categories-container" class="loading-value">
+                    Loading category breakdown...
                 </div>
             </div>
 
@@ -310,9 +325,9 @@
             <div class="results-dashboard">
                 <h3><i class="fa-solid fa-brain"></i> AI Financial Health</h3>
                 <div style="text-align:center;padding:15px 0;">
-                    <h1 style="font-size:72px; color:var(--accent-blue); margin-bottom:10px;">91</h1>
-                    <h3>Excellent</h3>
-                    <p class="results-intro">You are spending wisely and maintaining a healthy savings rate.</p>
+                    <h1 id="ai-health-score" class="loading-value" style="font-size:72px; color:var(--accent-blue); margin-bottom:10px;">--</h1>
+                    <h3 id="ai-health-status" class="loading-value">Analyzing...</h3>
+                    <p class="results-intro" id="ai-health-message">Generating insights based on your recent ledger activity.</p>
                 </div>
             </div>
         </section>
@@ -329,44 +344,35 @@
             <!-- User Card -->
             <div class="placeholder-card user-info">
                 <div class="avatar"><i class="fa-solid fa-user"></i></div>
-                <h2 id="profile-name">Investor</h2>
-                <p>Premium Member</p>
+                <h2 id="profile-name" class="loading-value">Loading...</h2>
+                <p id="profile-tier" class="loading-value">--</p>
             </div>
 
             <!-- Stats -->
             <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-label">Monthly Income</span>
-                    <strong class="stat-value">₹80,000</strong>
+                    <strong id="profile-income" class="stat-value loading-value">--</strong>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Monthly Saving</span>
-                    <strong class="stat-value">₹25,000</strong>
+                    <strong id="profile-saving" class="stat-value loading-value">--</strong>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Goals</span>
-                    <strong class="stat-value">5</strong>
+                    <strong id="profile-goals" class="stat-value loading-value">--</strong>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Reports</span>
-                    <strong class="stat-value">18</strong>
+                    <strong id="profile-reports" class="stat-value loading-value">--</strong>
                 </div>
             </div>
 
             <!-- Achievements -->
             <div class="results-dashboard">
                 <h3>Achievements</h3>
-                <div class="transaction-item">
-                    <span>🏆 First Goal Completed</span>
-                </div>
-                <div class="transaction-item">
-                    <span>🔥 30 Day Saving Streak</span>
-                </div>
-                <div class="transaction-item">
-                    <span>💰 Saved ₹1,00,000</span>
-                </div>
-                <div class="transaction-item">
-                    <span>🚀 Smart Investor</span>
+                <div id="achievements-container" class="loading-value">
+                    Loading achievements...
                 </div>
             </div>
 
@@ -443,21 +449,21 @@
                         
                         <div style="display:flex; justify-content:space-between; margin-top:10px;">
                             <span>Used</span>
-                            <strong id="budget-percent">0%</strong>
+                            <strong id="budget-percent" class="loading-value">--%</strong>
                         </div>
 
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <span class="stat-label">Spent</span>
-                                <strong id="month-spent" class="stat-value">₹0</strong>
+                                <strong id="month-spent" class="stat-value loading-value">--</strong>
                             </div>
                             <div class="stat-box">
                                 <span class="stat-label">Remaining</span>
-                                <strong id="month-remaining" class="stat-value">₹0</strong>
+                                <strong id="month-remaining" class="stat-value loading-value">--</strong>
                             </div>
                             <div class="stat-box full-width">
                                 <span class="stat-label">Daily Allowance</span>
-                                <strong id="daily-allowance" class="stat-value">₹0</strong>
+                                <strong id="daily-allowance" class="stat-value loading-value">--</strong>
                             </div>
                         </div>
 
@@ -524,14 +530,6 @@
 </div>
 
 <!-- ==========================================
-                JAVASCRIPT
-=========================================== -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="js/api.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/app.js"></script>
-
-<!-- ==========================================
                 TRANSACTION MODAL
 =========================================== -->
 <div id="transaction-modal" class="modal-overlay hidden">
@@ -589,6 +587,81 @@
         </form>
     </div>
 </div>
+
+<!-- ==========================================
+                AI CHAT MODAL
+========================================== -->
+<div id="ai-chat-modal" class="modal-overlay hidden">
+    <div class="ai-chat-window">
+        <div class="ai-chat-header">
+    <div class="ai-header-info">
+        <i class="fa-solid fa-robot"></i>
+        <div>
+            <h3>FinTack AI</h3>
+            <span>Financial Assistant</span>
+        </div>
+    </div>
+
+    <button
+        id="close-ai-chat"
+        class="ai-close-btn">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+</div>
+
+        <div id="ai-chat-body" class="ai-chat-body">
+            <div class="ai-message">
+                👋 Hello!
+                <br><br>
+                I'm FinTack AI.
+                <br><br>
+                Ask me anything about your finances.
+            </div>
+        </div>
+
+        <div class="ai-chat-footer">
+            <input
+                id="ai-chat-input"
+                type="text"
+                placeholder="Ask anything..."
+            >
+            <button id="ai-send-btn">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+                JAVASCRIPT
+=========================================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- ================= AI Modules ================= -->
+
+<script src="js/ai/aiAnalyzer.js"></script>
+<script src="js/ai/aiFormatter.js"></script>
+<script src="js/ai/aiInsights.js"></script>
+<script src="js/ai/aiChat.js"></script>
+<script src="js/ai/aiMemory.js"></script>
+
+<!-- ================= Trip Manager ================= -->
+
+<script src="js/trip/tripStorage.js"></script>
+<script src="js/trip/tripManager.js"></script>
+<script src="js/trip/tripCalculator.js"></script>
+<script src="js/trip/tripFormatter.js"></script>
+<script src="js/trip/tripIntent.js"></script>
+
+<!-- ================= AI Main ================= -->
+
+<script src="js/ai/ai.js"></script>
+
+<!-- ================= Core ================= -->
+
+<script src="js/core/api.js"></script>
+<script src="js/core/ui.js"></script>
+<script src="js/core/app.js"></script>
 
 </body>
 </html>

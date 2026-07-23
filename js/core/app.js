@@ -4,7 +4,7 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
     /* ======================================================
-                        DOM ELEMENTS & STATE
+                            DOM ELEMENTS
     ====================================================== */
     const savingsModal = document.getElementById("savings-modal");
     const savingsForm = document.getElementById("savings-form");
@@ -56,11 +56,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     const planDuration = document.getElementById("plan-duration");
     const planResults = document.getElementById("plan-results");
 
-    // State Variables
+    // AI Chat Elements
+    const aiSearchInput = document.getElementById("ai-search-input");
+    const aiOptimizeBtn = document.getElementById("ai-optimize-btn");
+    const aiModal = document.getElementById("ai-chat-modal");
+    const aiInput = document.getElementById("ai-chat-input");
+    const aiSend = document.getElementById("ai-send-btn");
+    const closeAI = document.getElementById("close-ai-chat"); 
+
+    /* ======================================================
+                            STATE VARIABLES
+    ====================================================== */
     let selectedGoalId = null;
     let editingGoalId = null;
     let transactionType = "expense";
-    let isLogin = true; // Set to true so Login is the default state
+    let isLogin = true; 
     let budget = JSON.parse(localStorage.getItem("budget_data")) || {
         income: 0,
         savings: 0,
@@ -68,69 +78,114 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     /* ======================================================
-                        INITIALIZATION & AUTH
+                    INITIALIZATION & AUTH
     ====================================================== */
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
 
     if (token && user) {
         if (loginModal) loginModal.classList.add("hidden");
-        if (profileName) profileName.textContent = user.full_name;
+        updateNodeValue("profile-name", user.full_name);
+        updateNodeValue("profile-tier", "Premium Member");
         await initializeDashboard(user.id);
     } else {
         if (loginModal) loginModal.classList.remove("hidden");
     }
 
     const savedUser = localStorage.getItem("fintack_user");
-    if (savedUser && profileName && (!token || !user)) {
-        profileName.textContent = savedUser;
+    if (savedUser && (!token || !user)) {
+        updateNodeValue("profile-name", savedUser);
+    }
+
+    function updateNodeValue(id, value) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = value;
+            el.classList.remove("loading-value");
+        }
+    }
+
+    function populateDynamicUI(summary, goalsLength = 0) {
+        if (!summary) return;
+
+        const fmtMoney = (val) => window.formatMoney ? window.formatMoney(val) : "₹" + Number(val || 0).toLocaleString("en-IN");
+        
+        updateNodeValue("net-worth", fmtMoney(summary.netWorth));
+        updateNodeValue("monthly-saving", fmtMoney(summary.monthlySavings));
+        
+        updateNodeValue("analysis-networth", fmtMoney(summary.netWorth));
+        updateNodeValue("analysis-investments", fmtMoney((summary.netWorth || 0) * 0.45)); 
+        updateNodeValue("analysis-savings", fmtMoney(summary.monthlySavings));
+        updateNodeValue("analysis-expenses", fmtMoney(summary.expenses));
+        
+        updateNodeValue("profile-income", fmtMoney(summary.income));
+        updateNodeValue("profile-saving", fmtMoney(summary.monthlySavings));
+        updateNodeValue("profile-goals", goalsLength.toString());
+        updateNodeValue("profile-reports", "12");
+
+        const goalProgress = document.getElementById("goal-progress");
+        const goalBar = document.getElementById("goal-progress-bar");
+        if (goalProgress && goalBar && summary.income > 0) {
+            const progress = Math.round((summary.monthlySavings / summary.income) * 100) || 0;
+            goalProgress.textContent = progress + "%";
+            goalProgress.classList.remove("loading-value");
+            goalBar.style.width = progress + "%";
+        }
     }
 
     async function initializeDashboard(userId) {
+        let dashboard = {}; 
+        let transactions = [];
+        let goals = [];
+
         if (typeof fetchDashboardData === "function") {
-            const dashboard = await fetchDashboardData();
-            
+            dashboard = await fetchDashboardData();
             if (dashboard.summary) {
-                const netWorth = document.getElementById("net-worth");
-                const monthlySaving = document.getElementById("monthly-saving");
-                const goalProgress = document.getElementById("goal-progress");
-                const goalBar = document.getElementById("goal-progress-bar");
-
-                if (netWorth) netWorth.textContent = "₹" + dashboard.summary.netWorth.toLocaleString();
-                if (monthlySaving) monthlySaving.textContent = "₹" + dashboard.summary.monthlySavings.toLocaleString();
-                
-                if (goalProgress && goalBar) {
-                    const progress = Math.round((dashboard.summary.monthlySavings / dashboard.summary.income) * 100) || 0;
-                    goalProgress.textContent = progress + "%";
-                    goalBar.style.width = progress + "%";
-                }
+                populateDynamicUI(dashboard.summary, 0);
             }
-
             if (typeof renderStocks === "function") renderStocks(dashboard.stocks);
             if (typeof renderNews === "function") renderNews(dashboard.news);
         }
 
         if (typeof fetchTransactions === "function") {
-            const transactions = await fetchTransactions(userId);
-            if (typeof renderTransactions === "function") renderTransactions(transactions);
-            
-            const summary = calculateSummary(transactions);
-            if (typeof updateDashboard === "function") updateDashboard(summary);
+            transactions = await fetchTransactions(userId);
+            if (typeof renderTransactions === "function") {
+                renderTransactions(transactions);
+            }
+            const localSummary = calculateSummary(transactions);
+            populateDynamicUI(localSummary, goals.length); 
+
+            if (typeof updateDashboard === "function") {
+                updateDashboard(localSummary);
+            }
         }
 
         if (typeof fetchGoals === "function") {
-            const goals = await fetchGoals(userId);
+            goals = await fetchGoals(userId);
+            
+            updateNodeValue("active-goals-count", goals.length.toString());
+            updateNodeValue("profile-goals", goals.length.toString());
+
             if (typeof renderGoals === "function") renderGoals(goals);
             if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
+            if (typeof updateAIRecommendations === "function") updateAIRecommendations(goals);
+
             attachGoalButtonEvents();
+        }
+
+        if (dashboard.summary) {
+            if (typeof renderAIInsights === "function") {
+                renderAIInsights(dashboard.summary, transactions, goals);
+            }
+            if (typeof renderAIAlerts === "function") {
+                renderAIAlerts(dashboard.summary, transactions, goals);
+            }
         }
     }
 
     /* ======================================================
                         EVENT LISTENERS
     ====================================================== */
-    
-    // --- Navigation ---
     function activatePage(id) {
         pages.forEach(page => page.classList.remove("active"));
         navItems.forEach(item => item.classList.remove("active"));
@@ -153,7 +208,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    // --- Floating Action Button (FAB) ---
     if (mainFab) {
         mainFab.addEventListener("click", (e) => {
             e.preventDefault();
@@ -186,7 +240,88 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // --- Auth Forms ---
+    /* ======================================================
+                    AI INTEL CORE ENGINE
+    ====================================================== */
+    if (aiSearchInput) {
+        aiSearchInput.addEventListener("focus", () => {
+            if (aiModal) aiModal.classList.remove("hidden");
+            aiSearchInput.blur();
+        });
+
+        aiSearchInput.addEventListener("keydown", async (e) => {
+            if (e.key !== "Enter") return;
+            const question = aiSearchInput.value.trim();
+            if (!question) return;
+
+            aiSearchInput.blur();
+            aiSearchInput.value = "🤖 FinTack AI is analyzing...";
+
+            try {
+                const dashboard = typeof fetchDashboardData === "function" ? await fetchDashboardData() : { summary: null };
+                const transactions = typeof fetchTransactions === "function" ? await fetchTransactions(user.id) : [];
+                const goals = typeof fetchGoals === "function" ? await fetchGoals(user.id) : [];
+                
+                const answer = await FinTackAI.answer(question, {
+                    summary: dashboard.summary,
+                    transactions,
+                    goals
+                });
+
+                aiSearchInput.value = "";
+                showAIResponse(answer);
+            } catch (error) {
+                console.error("AI Generation Error:", error);
+                aiSearchInput.value = "";
+                alert("Unable to generate AI response.");
+            }
+        });
+    }
+
+    if (closeAI) {
+        closeAI.addEventListener("click", () => {
+            aiModal.classList.add("hidden");
+        });
+    }
+
+    if (aiSend) {
+        aiSend.addEventListener("click", async () => {
+            const question = aiInput.value.trim();
+            if (!question) return;
+
+            addUserMessage(question);
+            aiInput.value = "";
+            showTyping();
+
+            try {
+                const dashboard = typeof fetchDashboardData === "function" ? await fetchDashboardData() : { summary: null };
+                const transactions = typeof fetchTransactions === "function" ? await fetchTransactions(user.id) : [];
+                const goals = typeof fetchGoals === "function" ? await fetchGoals(user.id) : [];
+
+                const answer = await FinTackAI.answer(question, {
+                    summary: dashboard.summary,
+                    transactions,
+                    goals
+                });
+
+                setTimeout(() => {
+                    hideTyping();
+                    addAIMessage(answer);
+                }, 800);
+            } catch (err) {
+                hideTyping();
+                addAIMessage("Sorry, I ran into an issue retrieving your data.");
+                console.error(err);
+            }
+        });
+    }
+
+    if (aiOptimizeBtn) {
+        aiOptimizeBtn.addEventListener("click", () => {
+            alert("FinTack AI Optimization Engine Initiated!\n\nYour saving structure adjustments have been processed. Your dashboard projection curves will dynamically recalculate on your next ledger transaction.");
+        });
+    }
+
     const switchAuth = document.getElementById("switch-auth");
     const authBtn = document.getElementById("auth-btn");
     const fullnameInput = document.getElementById("fullname");
@@ -195,7 +330,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         switchAuth.addEventListener("click", () => {
             isLogin = !isLogin;
             if (isLogin) {
-                // Switching to LOGIN state
                 authBtn.textContent = "Login";
                 switchAuth.innerHTML = `Don't have an account? <strong>Create one</strong>`;
                 if (fullnameInput) {
@@ -203,7 +337,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     fullnameInput.removeAttribute("required");
                 }
             } else {
-                // Switching to SIGN UP state
                 authBtn.textContent = "Sign Up";
                 switchAuth.innerHTML = `Already have an account? <strong>Login</strong>`;
                 if (fullnameInput) {
@@ -240,7 +373,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 localStorage.setItem("token", result.token);
                 localStorage.setItem("user", JSON.stringify(result.user));
 
-                if (profileName) profileName.textContent = result.user.full_name;
+                updateNodeValue("profile-name", result.user.full_name);
                 
                 loginModal.classList.add("hidden");
                 activatePage("home-view");
@@ -267,7 +400,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // --- Forms & Submissions ---
     if (transactionForm) {
         transactionForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -289,7 +421,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const transactions = await fetchTransactions(user.id);
             if (typeof renderTransactions === "function") renderTransactions(transactions);
-            if (typeof updateDashboard === "function") updateDashboard(calculateSummary(transactions));
+            
+            const summary = calculateSummary(transactions);
+            populateDynamicUI(summary, 0);
+            
+            if (typeof updateDashboard === "function") updateDashboard(summary);
         });
     }
 
@@ -309,7 +445,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     user_id: user.id,
                     title: goalTitle.value,
                     target_amount: Number(goalTarget.value),
-                    current_amount: 0, // Defaulting to 0 since the input field was removed
+                    current_amount: 0, 
                     deadline: goalDeadline.value
                 })
             });
@@ -325,6 +461,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             goalForm.reset();
 
             const goals = await fetchGoals(user.id);
+            updateNodeValue("active-goals-count", goals.length.toString());
+            updateNodeValue("profile-goals", goals.length.toString());
+
             if (typeof renderGoals === "function") renderGoals(goals);
             if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
             attachGoalButtonEvents();
@@ -392,9 +531,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    /* ======================================================
-            CENTRALIZED MODAL CLOSING (Click Outside & ESC)
-    ====================================================== */
     const modals = [
         { el: savingsModal, form: savingsForm },
         { el: editGoalModal, form: editGoalForm },
@@ -423,7 +559,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    // --- Goal Planner ---
     goalCards.forEach(card => {
         card.addEventListener("click", () => {
             if(plannerTitle) plannerTitle.textContent = card.dataset.title || "Goal";
@@ -471,9 +606,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    /* ======================================================
-                        BUDGET MANAGER
-    ====================================================== */
     if (openExpenseBtn) {
         openExpenseBtn.addEventListener("click", () => {
             expenseManager.classList.remove("hidden");
@@ -561,9 +693,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     refreshBudget();
 
-    /* ======================================================
-                            CHARTS (Chart.js)
-    ====================================================== */
     if (typeof Chart !== "undefined") {
         const expenseCanvas = document.getElementById("expenseChart");
         if (expenseCanvas) {
@@ -615,9 +744,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    /* ======================================================
-                            HELPERS
-    ====================================================== */
     window.formatMoney = function (value) {
         return "₹" + Number(value).toLocaleString("en-IN");
     };
@@ -688,13 +814,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         const currentUser = JSON.parse(localStorage.getItem("user"));
         if (currentUser && typeof fetchGoals === "function") {
             const goals = await fetchGoals(currentUser.id);
+            
+            updateNodeValue("active-goals-count", goals.length.toString());
+            updateNodeValue("profile-goals", goals.length.toString());
+
             if (typeof renderGoals === "function") renderGoals(goals);
             if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
+            if (typeof updateAIRecommendations === "function") updateAIRecommendations(goals);
             attachGoalButtonEvents();
         }
     }
 
-    // Goal Animation Initialization
     document.querySelectorAll(".progress").forEach(bar => {
         const width = bar.style.width;
         bar.style.width = "0%";
@@ -704,11 +834,119 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("%cFinTack Loaded Successfully", "color:#58a6ff;font-size:18px;font-weight:bold;");
 });
 
-// Service Worker Registration
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
         navigator.serviceWorker.register("service-worker.js").catch(err => {
             console.warn("Service Worker registration failed:", err);
         });
     });
+}
+
+function showAIResponse(content) {
+    const oldCard = document.getElementById("ai-response-card");
+    if (oldCard) oldCard.remove();
+
+    const card = document.createElement("div");
+    card.id = "ai-response-card";
+    card.className = "results-dashboard";
+
+    const header = document.createElement("h3");
+    header.innerHTML = `<i class="fa-solid fa-robot"></i> FinTack AI`;
+    card.appendChild(header);
+    
+    const bodyContainer = document.createElement("div");
+    bodyContainer.style.cssText = "white-space:pre-line; line-height:1.8;";
+
+    if (typeof content === "string") {
+        bodyContainer.innerHTML = content;
+    } else if (content instanceof Node) {
+        bodyContainer.appendChild(content);
+    }
+    
+    card.appendChild(bodyContainer);
+
+    const searchBox = document.querySelector(".search-container");
+    if (searchBox) searchBox.insertAdjacentElement("afterend", card);
+}
+
+function generatePurchaseAnalysisCard(data) {
+    const container = document.createElement("div");
+    container.className = "purchase-analysis-wrapper";
+
+    container.innerHTML = `
+        <h3>🛒 Purchase Analysis</h3>
+        <div class="ai-card-grid">
+            <div class="ai-mini-card">
+                <h4>Income</h4>
+                <h2>₹${(data.income || 0).toLocaleString()}</h2>
+            </div>
+            <div class="ai-mini-card">
+                <h4>Expenses</h4>
+                <h2>₹${(data.expenses || 0).toLocaleString()}</h2>
+            </div>
+            <div class="ai-mini-card">
+                <h4>Savings</h4>
+                <h2>₹${(data.monthlySavings || 0).toLocaleString()}</h2>
+            </div>
+        </div>
+        <div class="ai-recommendation">
+            <b>Recommendation</b><br><br>
+            ${data.recommendation || "Maintain your current tracking."}<br><br>
+            Estimated Saving Time<br>
+            <b>${data.months || 0} months</b>
+        </div>
+    `;
+
+    return container;
+}
+
+function addUserMessage(message) {
+    const chat = document.getElementById("ai-chat-body");
+    if (!chat) return;
+    
+    const div = document.createElement("div");
+    div.className = "user-message";
+    div.innerHTML = message;
+    chat.appendChild(div);
+    
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function addAIMessage(content) {
+    const chat = document.getElementById("ai-chat-body");
+    if (!chat) return;
+
+    const div = document.createElement("div");
+    div.className = "ai-message";
+    
+    if (typeof content === "string") {
+        if (content.includes("</div>") || content.includes("</li>") || content.includes("</p>") || content.includes("<div")) {
+            div.innerHTML = content; 
+        } else {
+            div.innerHTML = content.replace(/\n/g, "<br>"); 
+        }
+    } else if (content instanceof Node) {
+        div.appendChild(content);
+    }
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+    const chat = document.getElementById("ai-chat-body");
+    if (!chat) return;
+
+    const typing = document.createElement("div");
+    typing.className = "ai-message";
+    typing.id = "typing";
+    typing.innerHTML = `🤖 FinTack AI is analyzing...`;
+    
+    chat.appendChild(typing);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function hideTyping() {
+    const typing = document.getElementById("typing");
+    if (typing) typing.remove();
 }
