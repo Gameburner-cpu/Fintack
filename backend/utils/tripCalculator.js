@@ -2,59 +2,123 @@ function calculateSettlements(members, expenses) {
 
     const balances = {};
 
+    /* =====================================================
+                    INITIALIZE BALANCES
+    ===================================================== */
+
     members.forEach(member => {
-        balances[member.member_name] = 0;
+
+        const name = String(member.member_name)
+            .trim()
+            .toLowerCase();
+
+        balances[name] = 0;
+
     });
 
+    if (members.length === 0) {
+
+        return {
+
+            total: 0,
+            share: 0,
+            balances: {},
+            settlements: []
+
+        };
+
+    }
+
+    /* =====================================================
+                    TOTAL EXPENSE
+    ===================================================== */
+
     const total = expenses.reduce(
-        (sum, expense) => sum + Number(expense.amount),
+
+        (sum, expense) => sum + Number(expense.amount || 0),
+
         0
+
     );
 
     const share = total / members.length;
 
+    /* =====================================================
+                    CREDIT PAYERS
+    ===================================================== */
+
     expenses.forEach(expense => {
 
-    if (!(expense.paid_by in balances)) {
-        console.error(
-            "Expense payer not found:",
-            expense.paid_by
-        );
-        return;
-    }
+        const payer = String(expense.paid_by)
+            .trim()
+            .toLowerCase();
 
-    balances[expense.paid_by] += Number(expense.amount);
+        if (!(payer in balances)) {
 
-});
+            console.warn(
+                "Expense payer not found:",
+                expense.paid_by
+            );
+
+            return;
+
+        }
+
+        balances[payer] += Number(expense.amount || 0);
+
+    });
+
+    /* =====================================================
+                    SUBTRACT SHARE
+    ===================================================== */
 
     Object.keys(balances).forEach(name => {
+
         balances[name] -= share;
+
     });
+
+    /* =====================================================
+                BUILD DEBTORS & CREDITORS
+    ===================================================== */
 
     const debtors = [];
     const creditors = [];
 
     Object.entries(balances).forEach(([name, amount]) => {
 
-        if (amount > 0) {
+        if (amount > 0.01) {
 
             creditors.push({
+
                 name,
+
                 amount
+
             });
 
         }
 
-        else if (amount < 0) {
+        else if (amount < -0.01) {
 
             debtors.push({
+
                 name,
+
                 amount: Math.abs(amount)
+
             });
 
         }
 
     });
+
+    creditors.sort((a, b) => b.amount - a.amount);
+    debtors.sort((a, b) => b.amount - a.amount);
+
+    /* =====================================================
+                    CALCULATE PAYMENTS
+    ===================================================== */
 
     const settlements = [];
 
@@ -64,8 +128,11 @@ function calculateSettlements(members, expenses) {
         const creditor = creditors[0];
 
         const payment = Math.min(
+
             debtor.amount,
+
             creditor.amount
+
         );
 
         settlements.push({
@@ -81,19 +148,29 @@ function calculateSettlements(members, expenses) {
         debtor.amount -= payment;
         creditor.amount -= payment;
 
-        if (debtor.amount < 0.01)
+        if (debtor.amount <= 0.01) {
+
             debtors.shift();
 
-        if (creditor.amount < 0.01)
+        }
+
+        if (creditor.amount <= 0.01) {
+
             creditors.shift();
 
+        }
+
     }
+
+    /* =====================================================
+                        RETURN
+    ===================================================== */
 
     return {
 
         total,
 
-        share,
+        share: Number(share.toFixed(2)),
 
         balances,
 
