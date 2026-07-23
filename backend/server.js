@@ -7,12 +7,14 @@ const jwt = require("jsonwebtoken");
 
 const supabase = require("./config/supabase");
 const tripRoutes = require("./routes/trips");
+const aiRoutes = require("./routes/ai");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use("/api/trips", tripRoutes);
+app.use("/api/ai", aiRoutes);
 
 /* ======================================================
                     HOME
