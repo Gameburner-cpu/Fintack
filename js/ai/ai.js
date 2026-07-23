@@ -1,7 +1,7 @@
 /* ==========================================================================
    ai.js - FinTack AI Engine (Database-Driven Trip Manager)
    ========================================================================== */
-
+let currentChatId = null;
 if (typeof window.activeTripId === "undefined") {
     window.activeTripId = null;
 }
