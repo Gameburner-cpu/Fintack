@@ -33,6 +33,12 @@ function calculateSettlements(members, expenses) {
                     TOTAL EXPENSE
     ===================================================== */
 
+    console.log("===== MEMBERS =====");
+    console.log(JSON.stringify(members, null, 2));
+
+    console.log("===== EXPENSES =====");
+    console.log(JSON.stringify(expenses, null, 2));
+
     const total = expenses.reduce(
 
         (sum, expense) => sum + Number(expense.amount || 0),
