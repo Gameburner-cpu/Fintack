@@ -28,6 +28,7 @@ class ModuleRegistry {
                     module.detector
 
                 );
+                console.log("Registered detector:", module.name);
 
             }
 

@@ -22,6 +22,7 @@ class IntentEngine {
         aiRequest.intents = [];
 
         for(const detector of this.detectors){
+            console.log("Running detector:", detector.constructor.name);
 
             const result =
                 await detector.detect(aiRequest);

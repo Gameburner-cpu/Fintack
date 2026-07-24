@@ -2,7 +2,7 @@
    FinTackAI.js
 ========================================================================== */
 
-import Brain from "./core/Brain.js";
+import Brain from "../core/Brain.js";
 
 class FinTackAI {
 

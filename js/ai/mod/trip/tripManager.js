@@ -11,44 +11,19 @@ class TripManager {
 
         switch (action.action) {
 
-            /* ==========================================================
-                            CREATE TRIP
-            ========================================================== */
-
             case "CREATE_TRIP":
-
                 return await this.createTrip(aiRequest);
 
-            /* ==========================================================
-                            ADD MEMBERS
-            ========================================================== */
-
             case "ADD_MEMBERS":
-
                 return await this.addMembers(aiRequest);
 
-            /* ==========================================================
-                            ADD EXPENSE
-            ========================================================== */
-
             case "ADD_EXPENSE":
-
                 return await this.addExpense(aiRequest);
 
-            /* ==========================================================
-                            SHOW SUMMARY
-            ========================================================== */
-
             case "SHOW_SUMMARY":
-
                 return await this.showSummary(aiRequest);
 
-            /* ==========================================================
-                            SHOW SETTLEMENTS
-            ========================================================== */
-
             case "SHOW_SETTLEMENTS":
-
                 return await this.showSettlements(aiRequest);
 
             default:
@@ -108,10 +83,11 @@ class TripManager {
 
             );
 
-        if (result.success) {
+        console.log("CREATE TRIP RESULT:", result);
 
-            window.activeTripId =
-                result.trip.id;
+        if (result.success && result.trip) {
+
+            window.activeTripId = result.trip.id;
 
         }
 
@@ -125,16 +101,20 @@ class TripManager {
 
     async addMembers(aiRequest) {
 
-        const members =
-            aiRequest.entities.members;
+        const members = aiRequest.entities.members;
 
-        return await TripStorage.addMembers(
+        const result =
+            await TripStorage.addMembers(
 
-            aiRequest.context.activeTripId,
+                aiRequest.context.activeTripId,
 
-            members
+                members
 
-        );
+            );
+
+        console.log("ADD MEMBERS RESULT:", result);
+
+        return result;
 
     }
 
@@ -144,13 +124,18 @@ class TripManager {
 
     async addExpense(aiRequest) {
 
-        return await TripStorage.addExpense(
+        const result =
+            await TripStorage.addExpense(
 
-            aiRequest.context.activeTripId,
+                aiRequest.context.activeTripId,
 
-            aiRequest.entities.expense
+                aiRequest.entities.expense
 
-        );
+            );
+
+        console.log("ADD EXPENSE RESULT:", result);
+
+        return result;
 
     }
 
@@ -160,11 +145,16 @@ class TripManager {
 
     async showSummary(aiRequest) {
 
-        return await TripStorage.getTripDetails(
+        const result =
+            await TripStorage.getTripDetails(
 
-            aiRequest.context.activeTripId
+                aiRequest.context.activeTripId
 
-        );
+            );
+
+        console.log("SHOW SUMMARY RESULT:", result);
+
+        return result;
 
     }
 
@@ -174,11 +164,16 @@ class TripManager {
 
     async showSettlements(aiRequest) {
 
-        return await TripStorage.getSettlements(
+        const result =
+            await TripStorage.getSettlements(
 
-            aiRequest.context.activeTripId
+                aiRequest.context.activeTripId
 
-        );
+            );
+
+        console.log("SHOW SETTLEMENTS RESULT:", result);
+
+        return result;
 
     }
 

@@ -54,7 +54,33 @@ class ResponseEngine {
 
                 );
 
-            responses.push(formatted);
+            /* ==========================================================
+                            NORMALIZE RESPONSE
+            ========================================================== */
+
+            if (typeof formatted === "string") {
+
+                responses.push({
+
+                    message: formatted,
+
+                    html: ""
+
+                });
+
+            }
+
+            else {
+
+                responses.push({
+
+                    message: formatted.message || "",
+
+                    html: formatted.html || ""
+
+                });
+
+            }
 
         }
 

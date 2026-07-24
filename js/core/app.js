@@ -1,7 +1,26 @@
 /* ==========================================================
                     FINTACK APP.JS
 ========================================================== */
-const aiChatBody = document.getElementById("ai-chat-body");
+
+import {
+    fetchDashboardData,
+    fetchTransactions,
+    fetchGoals,
+    addTransaction
+} from "./api.js";
+
+import {
+    renderStocks,
+    renderNews,
+    renderTransactions,
+    renderGoals,
+    updateDashboard,
+    updateGoalSummary
+} from "./ui.js";
+import Navigation from "./navigation.js";
+import FinTackAI from "../ai/FinTackAI.js";
+import AIStorage from "../ai/aiStorage.js";
+
 document.addEventListener("DOMContentLoaded", async () => {
     /* ======================================================
                             DOM ELEMENTS
@@ -25,7 +44,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const loginModal = document.getElementById("login-modal");
     const loginForm = document.getElementById("login-form");
-    const profileName = document.getElementById("profile-name");
+    const fullnameInput = document.getElementById("fullname");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
     const logoutBtn = document.getElementById("logout-btn");
 
     const navItems = document.querySelectorAll(".bottom-nav .nav-item");
@@ -39,11 +60,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     const transactionModal = document.getElementById("transaction-modal");
     const transactionTitle = document.getElementById("transaction-title-text");
     const transactionForm = document.getElementById("transaction-form");
+    const transactionNameInput = document.getElementById("transaction-name");
+    const transactionAmountInput = document.getElementById("transaction-amount");
+    const transactionCategoryInput = document.getElementById("transaction-category");
+    const transactionDateInput = document.getElementById("transaction-date");
 
     const expenseManager = document.getElementById("expenses-manager");
     const openExpenseBtn = document.getElementById("btn-expenses");
     const closeExpenseBtn = document.getElementById("close-expenses");
     const budgetForm = document.getElementById("budget-setup-form");
+    
+    // Budget DOM Elements
+    const budgetIncomeInput = document.getElementById("budget-income");
+    const budgetSavingsInput = document.getElementById("budget-savings");
+    const todaysTransactionsList = document.getElementById("todays-transactions");
+    const monthSpentEl = document.getElementById("month-spent");
+    const monthRemainingEl = document.getElementById("month-remaining");
+    const dailyAllowanceEl = document.getElementById("daily-allowance");
+    const budgetPercentEl = document.getElementById("budget-percent");
+    const budgetProgressFill = document.getElementById("budget-progress-fill");
     
     // Goals Planner Elements
     const goalCards = document.querySelectorAll(".goal-card");
@@ -55,6 +90,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const planIncome = document.getElementById("plan-income");
     const planDuration = document.getElementById("plan-duration");
     const planResults = document.getElementById("plan-results");
+    const resMonthSave = document.getElementById("res-month-save");
+    const resWeekSave = document.getElementById("res-week-save");
+    const resDaySave = document.getElementById("res-day-save");
+    const resMonthSpend = document.getElementById("res-month-spend");
+    const resWeekSpend = document.getElementById("res-week-spend");
+    const resDaySpend = document.getElementById("res-day-spend");
 
     // AI Chat Elements
     const aiSearchInput = document.getElementById("ai-search-input");
@@ -68,29 +109,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     const aiInput = document.getElementById("ai-chat-input");
     const aiSend = document.getElementById("ai-send-btn");
     const closeAI = document.getElementById("close-ai-chat"); 
+    const aiChatBody = document.getElementById("ai-chat-body");
 
     /* ======================================================
-                    STATE VARIABLES
+                    STATE VARIABLES & INSTANCES
     ====================================================== */
     let selectedGoalId = null;
     let editingGoalId = null;
     let transactionType = "expense";
     let isLogin = true;
+    let currentChatId = localStorage.getItem("currentChatId") || null;
+    let isDashboardInitialized = false;
 
-    let currentChatId = null;
+    let expenseChartInst = null;
+    let portfolioChartInst = null;
+    let incomeChartInst = null;
 
     let budget = JSON.parse(localStorage.getItem("budget_data")) || {
         income: 0,
-        savings: 0,
-        expenses: []
+        savings: 0
     };
+
+    let token = localStorage.getItem("token");
+    let user = JSON.parse(localStorage.getItem("user"));
 
     /* ======================================================
                     INITIALIZATION & AUTH
     ====================================================== */
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
-
     if (token && user) {
         if (loginModal) loginModal.classList.add("hidden");
         updateNodeValue("profile-name", user.full_name);
@@ -105,96 +150,298 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateNodeValue("profile-name", savedUser);
     }
 
+    /* ======================================================
+                    CORE DATA PROCESSING
+    ====================================================== */
+
+    function processFinancialData(transactions) {
+        let totalIncome = 0;
+        let totalExpense = 0;
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        let currentMonthIncome = 0;
+        let currentMonthExpense = 0;
+        let categoryTotals = {};
+        
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const last6Months = [];
+        
+        // Initialize last 6 months buckets
+        for (let i = 5; i >= 0; i--) {
+            let d = new Date(currentYear, currentMonth - i, 1);
+            last6Months.push({ label: monthNames[d.getMonth()], year: d.getFullYear(), income: 0, expense: 0 });
+        }
+
+        const txArr = Array.isArray(transactions) ? transactions : [];
+
+        txArr.forEach(t => {
+            const amt = Number(t.amount) || 0;
+            const tDate = new Date(t.date);
+            const tMonth = tDate.getMonth();
+            const tYear = tDate.getFullYear();
+            
+            if (t.type === 'income') {
+                totalIncome += amt;
+                if (tMonth === currentMonth && tYear === currentYear) currentMonthIncome += amt;
+            } else {
+                totalExpense += amt;
+                if (tMonth === currentMonth && tYear === currentYear) currentMonthExpense += amt;
+                
+                const cat = t.category || 'Other';
+                categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
+            }
+
+            const chartData = last6Months.find(m => m.label === monthNames[tMonth] && m.year === tYear);
+            if (chartData) {
+                if (t.type === 'income') chartData.income += amt;
+                else chartData.expense += amt;
+            }
+        });
+
+        const balance = totalIncome - totalExpense;
+        const currentMonthSavings = currentMonthIncome - currentMonthExpense;
+
+        return {
+            income: totalIncome,
+            expenses: totalExpense,
+            balance: balance,
+            netWorth: balance, 
+            monthlyIncome: currentMonthIncome,
+            monthlyExpense: currentMonthExpense,
+            monthlySavings: currentMonthSavings,
+            categoryTotals,
+            chartData: {
+                labels: last6Months.map(m => m.label),
+                income: last6Months.map(m => m.income),
+                expense: last6Months.map(m => m.expense)
+            }
+        };
+    }
+
     function updateNodeValue(id, value) {
         const el = document.getElementById(id);
-        if (el) {
+        if (el && value !== undefined && value !== null) {
             el.textContent = value;
             el.classList.remove("loading-value");
         }
     }
 
-    function populateDynamicUI(summary, goalsLength = 0) {
+    function populateDynamicUI(summary, goalsLength = 0, goals = []) {
         if (!summary) return;
 
         const fmtMoney = (val) => window.formatMoney ? window.formatMoney(val) : "₹" + Number(val || 0).toLocaleString("en-IN");
         
+        // HOME DASHBOARD
         updateNodeValue("net-worth", fmtMoney(summary.netWorth));
         updateNodeValue("monthly-saving", fmtMoney(summary.monthlySavings));
         
+        // ANALYSIS DASHBOARD
         updateNodeValue("analysis-networth", fmtMoney(summary.netWorth));
+        // Allocate an estimated 45% of net worth to investments naturally for UI completion
         updateNodeValue("analysis-investments", fmtMoney((summary.netWorth || 0) * 0.45)); 
         updateNodeValue("analysis-savings", fmtMoney(summary.monthlySavings));
-        updateNodeValue("analysis-expenses", fmtMoney(summary.expenses));
+        updateNodeValue("analysis-expenses", fmtMoney(summary.monthlyExpense));
         
-        updateNodeValue("profile-income", fmtMoney(summary.income));
+        // PROFILE DASHBOARD
+        updateNodeValue("profile-income", fmtMoney(summary.monthlyIncome));
         updateNodeValue("profile-saving", fmtMoney(summary.monthlySavings));
         updateNodeValue("profile-goals", goalsLength.toString());
         updateNodeValue("profile-reports", "12");
 
         const goalProgress = document.getElementById("goal-progress");
         const goalBar = document.getElementById("goal-progress-bar");
-        if (goalProgress && goalBar && summary.income > 0) {
-            const progress = Math.round((summary.monthlySavings / summary.income) * 100) || 0;
+        
+        if (goalProgress && goalBar) {
+            const income = Number(summary.monthlyIncome) || 0;
+            const savings = Number(summary.monthlySavings) || 0;
+            const progress = income > 0 ? Math.max(0, Math.round((savings / income) * 100)) : 0;
+            
             goalProgress.textContent = progress + "%";
             goalProgress.classList.remove("loading-value");
-            goalBar.style.width = progress + "%";
+            goalBar.style.width = Math.min(progress, 100) + "%";
+        }
+
+        updateAIHealth(summary);
+        updateSpendingCategories(summary.categoryTotals);
+        updateAchievements(summary, goals);
+    }
+
+    function updateAIHealth(summary) {
+        const scoreEl = document.getElementById("ai-health-score");
+        const statusEl = document.getElementById("ai-health-status");
+        const msgEl = document.getElementById("ai-health-message");
+        const insightsEl = document.getElementById("ai-insights");
+        
+        if(!scoreEl) return;
+        
+        if (summary.monthlyIncome <= 0 && summary.monthlyExpense <= 0) {
+            scoreEl.textContent = "0";
+            statusEl.textContent = "No Data";
+            msgEl.textContent = "Add income and expenses to generate your health score.";
+            if(insightsEl) insightsEl.innerHTML = "<p>Add transactions to unlock AI insights.</p>";
+            return;
+        }
+        
+        const savingsRate = summary.monthlyIncome > 0 ? (summary.monthlySavings / summary.monthlyIncome) * 100 : -100;
+        let score = 50;
+        let status = "";
+        let msg = "";
+        
+        if (savingsRate >= 20) {
+            score = Math.min(98, 70 + savingsRate);
+            status = "Excellent";
+            msg = "Your savings rate is above optimal levels. Keep accelerating wealth growth!";
+        } else if (savingsRate >= 10) {
+            score = 60 + savingsRate;
+            status = "Good";
+            msg = "You're on the right track. Try pushing your savings closer to 20%.";
+        } else if (savingsRate > 0) {
+            score = 40 + savingsRate;
+            status = "Fair";
+            msg = "You are saving, but a higher rate will protect against unexpected expenses.";
+        } else {
+            score = Math.max(10, 40 + savingsRate); 
+            status = "Needs Attention";
+            msg = "Your expenses exceed your income this month. Please review your budget.";
+        }
+        
+        scoreEl.textContent = Math.round(score);
+        statusEl.textContent = status;
+        msgEl.textContent = msg;
+        
+        if (insightsEl) {
+            insightsEl.innerHTML = `
+                <div style="background: rgba(88,166,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--accent-blue);">
+                    <strong><i class="fa-solid fa-lightbulb" style="color:var(--accent-blue);"></i> FinTack AI Insight</strong>
+                    <p style="margin-top:8px; font-size:14px; color:#d1d5db; line-height:1.5;">${msg} You spent ₹${summary.monthlyExpense.toLocaleString("en-IN")} this month so far.</p>
+                </div>
+            `;
         }
     }
 
+    function updateSpendingCategories(categoryTotals) {
+        const container = document.getElementById("spending-categories-container");
+        if (!container) return;
+        
+        const categories = Object.keys(categoryTotals).sort((a,b) => categoryTotals[b] - categoryTotals[a]);
+        
+        if (categories.length === 0) {
+            container.innerHTML = "No expenses recorded.";
+            return;
+        }
+        
+        container.innerHTML = categories.map(cat => `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; padding-bottom:12px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:rgba(88,166,255,0.1); color:var(--accent-blue); display:flex; align-items:center; justify-content:center;">
+                        <i class="fa-solid fa-tag"></i>
+                    </div>
+                    <span>${cat}</span>
+                </div>
+                <strong>₹${categoryTotals[cat].toLocaleString("en-IN")}</strong>
+            </div>
+        `).join("");
+    }
+
+    function updateAchievements(summary, goals) {
+        const container = document.getElementById("achievements-container");
+        if (!container) return;
+        
+        let badges = [];
+        if (summary.monthlySavings > 10000) badges.push({icon: "fa-star", text: "Super Saver", color: "#ffb84d"});
+        if (goals.length >= 3) badges.push({icon: "fa-bullseye", text: "Goal Setter", color: "#3ddc97"});
+        if (summary.monthlyIncome > 0 && summary.monthlyExpense === 0) badges.push({icon: "fa-leaf", text: "Zero Spend Day", color: "#00d26a"});
+        if (summary.netWorth > 100000) badges.push({icon: "fa-crown", text: "1L Club", color: "#9b51e0"});
+        
+        if (badges.length === 0) badges.push({icon: "fa-seedling", text: "Starter", color: "#58a6ff"});
+        
+        container.innerHTML = badges.map(b => `
+            <div style="display:inline-block; margin-right:15px; margin-bottom:15px; text-align:center;">
+                <div style="width:50px; height:50px; border-radius:25px; background:rgba(255,255,255,0.05); color:${b.color}; display:flex; align-items:center; justify-content:center; font-size:24px; margin: 0 auto 8px auto;">
+                    <i class="fa-solid ${b.icon}"></i>
+                </div>
+                <span style="font-size:12px; color:#8d97a5;">${b.text}</span>
+            </div>
+        `).join("");
+    }
+
     async function initializeDashboard(userId) {
-        let dashboard = {}; 
-        let transactions = [];
-        let goals = [];
+        if (isDashboardInitialized || !userId) return;
 
-        if (typeof fetchDashboardData === "function") {
-            dashboard = await fetchDashboardData();
-            if (dashboard.summary) {
-                populateDynamicUI(dashboard.summary, 0);
+        try {
+            const [dashboard, transactions, goals] = await Promise.all([
+                typeof fetchDashboardData === "function" ? fetchDashboardData(userId).catch(() => ({})) : Promise.resolve({}),
+                typeof fetchTransactions === "function" ? fetchTransactions(userId).catch(() => fetch(`https://fintack.onrender.com/api/transactions/${userId}`).then(res => res.json()).then(r => r.transactions)) : Promise.resolve([]),
+                typeof fetchGoals === "function" ? fetchGoals(userId).catch(() => fetch(`https://fintack.onrender.com/api/goals/${userId}`).then(res => res.json()).then(r => r.goals)) : Promise.resolve([])
+            ]);
+            
+            const processedData = processFinancialData(transactions);
+
+            if (dashboard && dashboard.stocks && typeof renderStocks === "function") renderStocks(dashboard.stocks);
+            if (dashboard && dashboard.news && typeof renderNews === "function") renderNews(dashboard.news);
+
+            if (typeof renderTransactions === "function") renderTransactions(transactions);
+            
+            populateDynamicUI(processedData, Array.isArray(goals) ? goals.length : 0, goals);
+            
+            if (typeof updateDashboard === "function") updateDashboard(processedData);
+
+            if (Array.isArray(goals)) {
+                updateNodeValue("active-goals-count", goals.length.toString());
+                updateNodeValue("profile-goals", goals.length.toString());
+                if (typeof renderGoals === "function") renderGoals(goals);
+                if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
             }
-            if (typeof renderStocks === "function") renderStocks(dashboard.stocks);
-            if (typeof renderNews === "function") renderNews(dashboard.news);
+            
+            attachGoalButtonEvents();
+            renderCharts(processedData.chartData, processedData);
+            refreshBudget(transactions);
+
+            isDashboardInitialized = true;
+        } catch (err) {
+            console.error("[FinTack] Dashboard Initialization Error:", err);
         }
+    }
 
-        if (typeof fetchTransactions === "function") {
-            transactions = await fetchTransactions(userId);
-            if (typeof renderTransactions === "function") {
-                renderTransactions(transactions);
-            }
-            const localSummary = calculateSummary(transactions);
-            populateDynamicUI(localSummary, goals.length); 
+    async function syncDataAndUpdateUI() {
+        if (!user || !user.id) return;
+        try {
+            const [transactionsRes, goalsRes] = await Promise.all([
+                fetch(`https://fintack.onrender.com/api/transactions/${user.id}`).then(res => res.json()).catch(() => ({ transactions: [] })),
+                fetch(`https://fintack.onrender.com/api/goals/${user.id}`).then(res => res.json()).catch(() => ({ goals: [] }))
+            ]);
+            
+            const transactions = transactionsRes.transactions || [];
+            const goals = goalsRes.goals || [];
+            
+            const processedData = processFinancialData(transactions);
 
-            if (typeof updateDashboard === "function") {
-                updateDashboard(localSummary);
-            }
-        }
-
-        if (typeof fetchGoals === "function") {
-            goals = await fetchGoals(userId);
+            if (typeof renderTransactions === "function") renderTransactions(transactions);
+            
+            populateDynamicUI(processedData, goals.length, goals);
+            
+            if (typeof updateDashboard === "function") updateDashboard(processedData);
             
             updateNodeValue("active-goals-count", goals.length.toString());
             updateNodeValue("profile-goals", goals.length.toString());
-
+            
             if (typeof renderGoals === "function") renderGoals(goals);
             if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
-            if (typeof updateAIRecommendations === "function") updateAIRecommendations(goals);
-
+            
             attachGoalButtonEvents();
-        }
-
-        if (dashboard.summary) {
-            if (typeof renderAIInsights === "function") {
-                renderAIInsights(dashboard.summary, transactions, goals);
-            }
-            if (typeof renderAIAlerts === "function") {
-                renderAIAlerts(dashboard.summary, transactions, goals);
-            }
+            renderCharts(processedData.chartData, processedData);
+            refreshBudget(transactions);
+            
+        } catch (error) {
+            console.error("[FinTack] Error synchronizing data:", error);
         }
     }
 
     /* ======================================================
-                        EVENT LISTENERS
+                            EVENT LISTENERS
     ====================================================== */
     function activatePage(id) {
+        if (!id) return;
         pages.forEach(page => page.classList.remove("active"));
         navItems.forEach(item => item.classList.remove("active"));
 
@@ -220,7 +467,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         mainFab.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            fabContainer.classList.toggle("menu-open");
+            if (fabContainer) fabContainer.classList.toggle("menu-open");
         });
     }
 
@@ -233,18 +480,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (fabIncome) {
         fabIncome.addEventListener("click", () => {
             transactionType = "income";
-            transactionTitle.textContent = "Add Income";
-            transactionModal.classList.remove("hidden");
-            fabContainer.classList.remove("menu-open");
+            if (transactionTitle) transactionTitle.textContent = "Add Income";
+            if (transactionModal) transactionModal.classList.remove("hidden");
+            if (fabContainer) fabContainer.classList.remove("menu-open");
         });
     }
 
     if (fabExpense) {
         fabExpense.addEventListener("click", () => {
             transactionType = "expense";
-            transactionTitle.textContent = "Add Expense";
-            transactionModal.classList.remove("hidden");
-            fabContainer.classList.remove("menu-open");
+            if (transactionTitle) transactionTitle.textContent = "Add Expense";
+            if (transactionModal) transactionModal.classList.remove("hidden");
+            if (fabContainer) fabContainer.classList.remove("menu-open");
         });
     }
 
@@ -252,119 +499,148 @@ document.addEventListener("DOMContentLoaded", async () => {
                     AI INTEL CORE ENGINE
     ====================================================== */
     async function loadHistory() {
-        if (!user) return;
+        if (!user || !user.id || !historyList) return;
         
-        const result = await AIStorage.getChats(user.id);
-        
-        if (!result.success) {
-            historyList.innerHTML = `
-                <div class="history-empty">
-                    Unable to load conversations.
-                </div>
-            `;
-            return;
-        }
+        try {
+            const result = await AIStorage.getChats(user.id);
+            
+            if (!result || !result.success || !Array.isArray(result.chats) || result.chats.length === 0) {
+                historyList.innerHTML = `
+                    <div class="history-empty">
+                        ${(!result || !result.success) ? 'Unable to load conversations.' : 'No conversations yet.'}
+                    </div>
+                `;
+                return;
+            }
 
-        const chats = result.chats;
-        
-        if (chats.length === 0) {
-            historyList.innerHTML = `
-                <div class="history-empty">
-                    No conversations yet.
-                </div>
-            `;
-            return;
-        }
-
-        historyList.innerHTML = "";
-        
-        chats.forEach(chat => {
-            const item = document.createElement("div");
-            item.className = "history-item";
-            item.dataset.id = chat.id;
-            item.innerHTML = `
-            <div class="history-chat">
-                <i class="fa-solid fa-comments"></i>
-                <span>${chat.title}</span>
-            </div>
-            <button
-                class="delete-chat-btn"
-                data-id="${chat.id}">
-                <i class="fa-solid fa-trash"></i>
-            </button>
-        `;
-            historyList.appendChild(item);
-            item.addEventListener("click", async () => {
-                currentChatId = chat.id;
-                Navigation.close("ai-history");
-                Navigation.open(
-                    "ai-chat",
-                    aiModal
-                );
-                loadChat(chat.id);
-        });
-            const deleteBtn = item.querySelector(".delete-chat-btn");
-            deleteBtn.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                if (!confirm("Delete this conversation?")) return;
-                const result = await AIStorage.deleteChat(chat.id);
-                if (result.success) {
-                    loadHistory();
+            historyList.innerHTML = "";
+            
+            result.chats.forEach(chat => {
+                if (!chat || !chat.id) return;
+                
+                const item = document.createElement("div");
+                item.className = "history-item";
+                item.dataset.id = chat.id;
+                item.innerHTML = `
+                    <div class="history-chat">
+                        <i class="fa-solid fa-comments"></i>
+                        <span>${chat.title || 'Untitled Conversation'}</span>
+                    </div>
+                    <button class="delete-chat-btn" data-id="${chat.id}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                historyList.appendChild(item);
+                
+                item.addEventListener("click", () => {
+                    currentChatId = chat.id;
+                    localStorage.setItem("currentChatId", currentChatId);
+                    if (typeof Navigation !== 'undefined' && aiModal) {
+                        Navigation.close("ai-history");
+                        Navigation.open("ai-chat", aiModal);
+                    }
+                    loadChat(chat.id);
+                });
+                
+                const deleteBtn = item.querySelector(".delete-chat-btn");
+                if (deleteBtn) {
+                    deleteBtn.addEventListener("click", async (e) => {
+                        e.stopPropagation();
+                        if (!confirm("Delete this conversation?")) return;
+                        const deleteResult = await AIStorage.deleteChat(chat.id);
+                        if (deleteResult && deleteResult.success) {
+                            if(currentChatId === chat.id) {
+                                currentChatId = null;
+                                localStorage.removeItem("currentChatId");
+                            }
+                            loadHistory();
+                        }
+                    });
                 }
             });
-        });
+        } catch (error) {
+            console.error("[FinTack] AI History Load Error:", error);
+            if (historyList) {
+                historyList.innerHTML = `<div class="history-empty">Failed to load history.</div>`;
+            }
+        }
     }
 
     if (aiHistoryBtn) {
         aiHistoryBtn.addEventListener("click", () => {
-            Navigation.open(
-                "ai-history",
-                aiHistoryModal
-            );
+            if (typeof Navigation !== 'undefined' && aiHistoryModal) {
+                Navigation.open("ai-history", aiHistoryModal);
+            }
             loadHistory();
         });
     }
 
-    async function loadChat(chatId) {
-        const result = await AIStorage.getMessages(chatId);
-        
-        if (!result.success) return;
-        
-        aiChatBody.innerHTML = "";
-        
-        result.messages.forEach(msg => {
-            if (msg.role === "user") {
-                addUserMessage(msg.message);
-            } else {
-                addAIMessage(msg.message);
+    /* ======================================================
+                        NEW CHAT
+    ====================================================== */
+    if (newChatBtn) {
+        newChatBtn.addEventListener("click", () => {
+            currentChatId = null;
+            localStorage.removeItem("currentChatId");
+            
+            if (aiChatBody) {
+                aiChatBody.innerHTML = "";
+            }
+            addAIMessage(`👋 Hello! What's on your mind today?`);
+
+            if (typeof Navigation !== "undefined" && aiModal) {
+                Navigation.close("ai-history");
+                Navigation.open("ai-chat", aiModal);
             }
         });
-        
-        scrollChatToBottom();
     }
 
-    // Close when X is clicked
+    async function loadChat(chatId) {
+        if (!chatId || !aiChatBody) return;
+        
+        try {
+            const result = await AIStorage.getMessages(chatId);
+            if (!result || !result.success || !Array.isArray(result.messages)) return;
+
+            aiChatBody.innerHTML = "";
+            
+            result.messages.forEach(msg => {
+                if (msg.role === "user") {
+                    addUserMessage(msg.message);
+                } else {
+                    addAIMessage(msg.message);
+                }
+            });
+            
+            scrollChatToBottom();
+        } catch (error) {
+            console.error("[FinTack] Chat Load Error:", error);
+        }
+    }
+
     if (closeHistory) {
         closeHistory.addEventListener("click", () => {
-            Navigation.close("ai-history");
+            if (typeof Navigation !== 'undefined') {
+                Navigation.close("ai-history");
+            }
         });
     }
 
-    // Close when clicking outside
     if (aiHistoryModal) {
         aiHistoryModal.addEventListener("click", (e) => {
             if (e.target === aiHistoryModal) {
-                Navigation.close("ai-history");
+                if (typeof Navigation !== 'undefined') {
+                    Navigation.close("ai-history");
+                }
             }
         });
     }
 
     if (aiSearchInput) {
         aiSearchInput.addEventListener("focus", () => {
-            if (aiModal) Navigation.open(
-                "ai-chat",
-                aiModal
-            );
+            if (aiModal && typeof Navigation !== 'undefined') {
+                Navigation.open("ai-chat", aiModal);
+            }
             aiSearchInput.blur();
         });
 
@@ -377,20 +653,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             aiSearchInput.value = "🤖 FinTack AI is analyzing...";
 
             try {
-                const dashboard = typeof fetchDashboardData === "function" ? await fetchDashboardData() : { summary: null };
-                const transactions = typeof fetchTransactions === "function" ? await fetchTransactions(user.id) : [];
-                const goals = typeof fetchGoals === "function" ? await fetchGoals(user.id) : [];
-                
-                const answer = await FinTackAI.answer(question, {
-                    summary: dashboard.summary,
-                    transactions,
-                    goals
-                });
-
+                const result = await FinTackAI.ask(question);
+                let html = "";
+                if (result && Array.isArray(result.responses)) {
+                    result.responses.forEach(response => {
+                        if (response.message) html += `<p>${response.message}</p>`;
+                        if (response.html) html += response.html;
+                    });
+                }
                 aiSearchInput.value = "";
-                showAIResponse(answer);
+                showAIResponse(html || "No response generated.");
             } catch (error) {
-                console.error("AI Generation Error:", error);
+                console.error("[FinTack] AI Generation Error:", error);
                 aiSearchInput.value = "";
                 alert("Unable to generate AI response.");
             }
@@ -399,75 +673,66 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (closeAI) {
         closeAI.addEventListener("click", () => {
-            Navigation.close("ai-chat");
+            if (typeof Navigation !== 'undefined') {
+                Navigation.close("ai-chat");
+            }
         });
     }
 
-    if (aiSend) {
+    if (aiSend && aiInput) {
         aiSend.addEventListener("click", async () => {
             const question = aiInput.value.trim();
-            if (!question) return;
-
-            // Create chat only for the first message
-            if (!currentChatId) {
-                const title = question.length > 40
-                    ? question.substring(0, 40) + "..."
-                    : question;
-
-                const result = await AIStorage.createChat(
-                    user.id,
-                    title
-                );
-
-                if (!result.success) {
-                    alert("Unable to create chat.");
-                    return;
-                }
-
-                currentChatId = result.chat.id;
-
-                localStorage.setItem(
-                    "currentChatId",
-                    currentChatId
-                );
-            }
-
-            addUserMessage(question);
-            aiInput.value = "";
-            showTyping();
-
-            // Save the user's message to storage
-            await AIStorage.saveMessage(
-                currentChatId,
-                "user",
-                question
-            );
+            if (!question || !user || !user.id) return;
 
             try {
-                const dashboard = typeof fetchDashboardData === "function" ? await fetchDashboardData() : { summary: null };
-                const transactions = typeof fetchTransactions === "function" ? await fetchTransactions(user.id) : [];
-                const goals = typeof fetchGoals === "function" ? await fetchGoals(user.id) : [];
+                if (!currentChatId) {
+                    const title = question.length > 40
+                        ? question.substring(0, 40) + "..."
+                        : question;
 
-                const answer = await FinTackAI.answer(question, {
-                    summary: dashboard.summary,
-                    transactions,
-                    goals
-                });
+                    const initResult = await AIStorage.createChat(user.id, title);
 
-                // Save the AI's response to storage
-                setTimeout(async () => {
+                    if (!initResult || !initResult.success || !initResult.chat) {
+                        alert("Unable to create chat.");
+                        return;
+                    }
+
+                    currentChatId = initResult.chat.id;
+                    localStorage.setItem("currentChatId", currentChatId);
+                }
+
+                aiInput.value = "";
+                addUserMessage(question);
+                showTyping();
+                
+                await AIStorage.saveMessage(currentChatId, "user", question);
+
+                const result = await FinTackAI.ask(question);
                 hideTyping();
-                addAIMessage(answer);
-                await AIStorage.saveMessage(
-                    currentChatId,
-                    "assistant",
-                    answer
-                );
-            }, 800);
+
+                let storageContent = "";
+
+                if (result && Array.isArray(result.responses) && result.responses.length > 0) {
+                    result.responses.forEach(response => {
+                        if (response.message) {
+                            addAIMessage(response.message);
+                            storageContent += `<p>${response.message}</p>`;
+                        }
+                        if (response.html) {
+                            addAIMessage(response.html);
+                            storageContent += response.html;
+                        }
+                    });
+                } else {
+                    addAIMessage("No response.");
+                    storageContent = "No response.";
+                }
+
+                await AIStorage.saveMessage(currentChatId, "assistant", storageContent);
             } catch (err) {
                 hideTyping();
                 addAIMessage("Sorry, I ran into an issue retrieving your data.");
-                console.error(err);
+                console.error("[FinTack] AI Chat Flow Error:", err);
             }
         });
     }
@@ -480,9 +745,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const switchAuth = document.getElementById("switch-auth");
     const authBtn = document.getElementById("auth-btn");
-    const fullnameInput = document.getElementById("fullname");
 
-    if (switchAuth) {
+    if (switchAuth && authBtn) {
         switchAuth.addEventListener("click", () => {
             isLogin = !isLogin;
             if (isLogin) {
@@ -506,9 +770,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const full_name = document.getElementById("fullname")?.value.trim();
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value.trim();
+            const full_name = fullnameInput?.value.trim();
+            const email = emailInput?.value.trim();
+            const password = passwordInput?.value.trim();
             
             const endpoint = isLogin ? "login" : "signup";
             const body = isLogin ? { email, password } : { full_name, email, password };
@@ -519,25 +783,38 @@ document.addEventListener("DOMContentLoaded", async () => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
                 });
+                
+                if (!response.ok) {
+                    const errRes = await response.json();
+                    alert(errRes.error || errRes.message || "Authentication failed");
+                    return;
+                }
+                
                 const result = await response.json();
 
-                if (!result.success) {
-                    alert(result.message || result.error);
+                if (!result.success || !result.user || !result.token) {
+                    alert(result.message || result.error || "Authentication failed");
                     return;
                 }
 
                 localStorage.setItem("token", result.token);
                 localStorage.setItem("user", JSON.stringify(result.user));
 
-                updateNodeValue("profile-name", result.user.full_name);
+                token = result.token;
+                user = result.user;
+
+                updateNodeValue("profile-name", user.full_name);
                 
-                loginModal.classList.add("hidden");
+                if (loginModal) loginModal.classList.add("hidden");
                 activatePage("home-view");
-                await initializeDashboard(result.user.id);
+                
+                isDashboardInitialized = false; 
+                await initializeDashboard(user.id);
                 
                 alert(isLogin ? "Login Successful!" : "Account Created Successfully!");
             } catch (err) {
-                console.error("Auth Error:", err);
+                console.error("[FinTack] Auth Error:", err);
+                alert("A network error occurred. Please try again.");
             }
         });
     }
@@ -546,11 +823,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         logoutBtn.addEventListener("click", () => {
             localStorage.removeItem("token");
             localStorage.removeItem("user");
+            localStorage.removeItem("currentChatId");
+            token = null;
+            user = null;
+            isDashboardInitialized = false;
+            currentChatId = null;
             
             if (loginModal) loginModal.classList.remove("hidden");
-            if (document.getElementById("fullname")) document.getElementById("fullname").value = "";
-            if (document.getElementById("email")) document.getElementById("email").value = "";
-            if (document.getElementById("password")) document.getElementById("password").value = "";
+            if (fullnameInput) fullnameInput.value = "";
+            if (emailInput) emailInput.value = "";
+            if (passwordInput) passwordInput.value = "";
             
             activatePage("home-view");
         });
@@ -559,29 +841,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (transactionForm) {
         transactionForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const title = document.getElementById("transaction-name").value;
-            const amount = Number(document.getElementById("transaction-amount").value);
-            const category = document.getElementById("transaction-category").value;
-            const date = document.getElementById("transaction-date").value;
+            if (!user || !user.id) return;
+            
+            const title = transactionNameInput?.value || "Transaction";
+            const amount = Number(transactionAmountInput?.value || 0);
+            const category = transactionCategoryInput?.value || "Other";
+            const date = transactionDateInput?.value || new Date().toISOString().split('T')[0];
 
             const data = { user_id: user.id, title, amount, category, date, type: transactionType };
 
-            await fetch("https://fintack.onrender.com/api/transactions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            });
+            try {
+                const response = await fetch("https://fintack.onrender.com/api/transactions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
 
-            transactionModal.classList.add("hidden");
-            transactionForm.reset();
+                if (!response.ok) throw new Error("Failed to post transaction");
 
-            const transactions = await fetchTransactions(user.id);
-            if (typeof renderTransactions === "function") renderTransactions(transactions);
-            
-            const summary = calculateSummary(transactions);
-            populateDynamicUI(summary, 0);
-            
-            if (typeof updateDashboard === "function") updateDashboard(summary);
+                closeModal({ el: transactionModal, form: transactionForm });
+                await syncDataAndUpdateUI();
+            } catch (err) {
+                console.error("[FinTack] Transaction Submission Error:", err);
+                alert("Failed to save transaction.");
+            }
         });
     }
 
@@ -594,96 +877,99 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (goalForm) {
         goalForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const response = await fetch("https://fintack.onrender.com/api/goals", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    user_id: user.id,
-                    title: goalTitle.value,
-                    target_amount: Number(goalTarget.value),
-                    current_amount: 0, 
-                    deadline: goalDeadline.value
-                })
-            });
+            if (!user || !user.id) return;
+            
+            try {
+                const response = await fetch("https://fintack.onrender.com/api/goals", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_id: user.id,
+                        title: goalTitle?.value || "New Goal",
+                        target_amount: Number(goalTarget?.value || 0),
+                        current_amount: 0, 
+                        deadline: goalDeadline?.value || new Date().toISOString().split('T')[0]
+                    })
+                });
 
-            const result = await response.json();
+                const result = await response.json();
 
-            if (!result.success) {
-                alert(result.error || "Unable to create goal.");
-                return;
+                if (!result || !result.success) {
+                    alert(result.error || "Unable to create goal.");
+                    return;
+                }
+
+                closeModal({ el: goalModal, form: goalForm });
+                await syncDataAndUpdateUI();
+            } catch (err) {
+                console.error("[FinTack] Goal Creation Error:", err);
+                alert("Failed to create goal.");
             }
-
-            goalModal.classList.add("hidden");
-            goalForm.reset();
-
-            const goals = await fetchGoals(user.id);
-            updateNodeValue("active-goals-count", goals.length.toString());
-            updateNodeValue("profile-goals", goals.length.toString());
-
-            if (typeof renderGoals === "function") renderGoals(goals);
-            if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
-            attachGoalButtonEvents();
         });
     }
 
     if (savingsForm) {
         savingsForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const amount = Number(savingAmount.value);
+            if (!selectedGoalId) return;
+            
+            const amount = Number(savingAmount?.value || 0);
 
-            if (amount <= 0) {
+            if (amount <= 0 || isNaN(amount)) {
                 alert("Enter a valid amount.");
                 return;
             }
 
-            const response = await fetch(`https://fintack.onrender.com/api/goals/${selectedGoalId}/savings`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount })
-            });
+            try {
+                const response = await fetch(`https://fintack.onrender.com/api/goals/${selectedGoalId}/savings`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ amount })
+                });
 
-            const result = await response.json();
-            if (!result.success) {
-                alert(result.error);
-                return;
+                const result = await response.json();
+                if (!result || !result.success) {
+                    alert(result.error || "Failed to update savings.");
+                    return;
+                }
+
+                closeModal({ el: savingsModal, form: savingsForm });
+                await syncDataAndUpdateUI();
+            } catch (err) {
+                console.error("[FinTack] Savings Update Error:", err);
+                alert("Failed to add savings.");
             }
-
-            savingsModal.classList.add("hidden");
-            savingsForm.reset();
-
-            const goals = await fetchGoals(user.id);
-            if (typeof renderGoals === "function") renderGoals(goals);
-            if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
-            attachGoalButtonEvents();
         });
     }
 
     if (editGoalForm) {
         editGoalForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const response = await fetch(`https://fintack.onrender.com/api/goals/${editingGoalId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: editGoalTitle.value,
-                    target_amount: Number(editGoalTarget.value),
-                    deadline: editGoalDeadline.value
-                })
-            });
-            const result = await response.json();
-            
-            if (!result.success) {
-                alert(result.error);
-                return;
+            if (!editingGoalId) return;
+
+            try {
+                const response = await fetch(`https://fintack.onrender.com/api/goals/${editingGoalId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: editGoalTitle?.value || "Updated Goal",
+                        target_amount: Number(editGoalTarget?.value || 0),
+                        deadline: editGoalDeadline?.value || new Date().toISOString().split('T')[0]
+                    })
+                });
+                const result = await response.json();
+                
+                if (!result || !result.success) {
+                    alert(result.error || "Failed to edit goal.");
+                    return;
+                }
+                
+                closeModal({ el: editGoalModal, form: editGoalForm });
+                await syncDataAndUpdateUI();
+            } catch (err) {
+                console.error("[FinTack] Edit Goal Error:", err);
+                alert("Failed to update goal.");
             }
-            
-            editGoalModal.classList.add("hidden");
-            editGoalForm.reset();
-            
-            const goals = await fetchGoals(user.id);
-            if (typeof renderGoals === "function") renderGoals(goals);
-            if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
-            attachGoalButtonEvents();
         });
     }
 
@@ -727,15 +1013,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     if (closePlanner) {
-        closePlanner.addEventListener("click", () => plannerView.classList.add("hidden"));
+        closePlanner.addEventListener("click", () => {
+            if (plannerView) plannerView.classList.add("hidden");
+        });
     }
 
     if (plannerForm) {
         plannerForm.addEventListener("submit", (e) => {
             e.preventDefault();
-            const target = Number(planTarget.value);
-            const income = Number(planIncome.value);
-            const months = Number(planDuration.value);
+            const target = Number(planTarget?.value || 0);
+            const income = Number(planIncome?.value || 0);
+            const months = Number(planDuration?.value || 0);
 
             if (target <= 0 || income <= 0 || months <= 0) {
                 alert("Enter valid values.");
@@ -745,122 +1033,133 @@ document.addEventListener("DOMContentLoaded", async () => {
             const monthlySave = target / months;
             const monthlySpend = income - monthlySave;
 
-            document.getElementById("res-month-save").textContent = "₹" + monthlySave.toFixed(0);
-            document.getElementById("res-week-save").textContent = "₹" + (monthlySave / 4).toFixed(0);
-            document.getElementById("res-day-save").textContent = "₹" + (monthlySave / 30).toFixed(0);
+            if (resMonthSave) resMonthSave.textContent = "₹" + monthlySave.toFixed(0);
+            if (resWeekSave) resWeekSave.textContent = "₹" + (monthlySave / 4).toFixed(0);
+            if (resDaySave) resDaySave.textContent = "₹" + (monthlySave / 30).toFixed(0);
             
-            document.getElementById("res-month-spend").textContent = "₹" + monthlySpend.toFixed(0);
-            document.getElementById("res-week-spend").textContent = "₹" + (monthlySpend / 4).toFixed(0);
-            document.getElementById("res-day-spend").textContent = "₹" + (monthlySpend / 30).toFixed(0);
+            if (resMonthSpend) resMonthSpend.textContent = "₹" + monthlySpend.toFixed(0);
+            if (resWeekSpend) resWeekSpend.textContent = "₹" + (monthlySpend / 4).toFixed(0);
+            if (resDaySpend) resDaySpend.textContent = "₹" + (monthlySpend / 30).toFixed(0);
 
-            planResults.classList.remove("hidden");
+            if (planResults) planResults.classList.remove("hidden");
 
             localStorage.setItem("last_goal_plan", JSON.stringify({
-                goal: plannerTitle.textContent,
+                goal: plannerTitle?.textContent || "Goal",
                 target, income, months
             }));
         });
     }
 
     if (openExpenseBtn) {
-        openExpenseBtn.addEventListener("click", () => {
-            expenseManager.classList.remove("hidden");
-            refreshBudget();
+        openExpenseBtn.addEventListener("click", async () => {
+            if (expenseManager) expenseManager.classList.remove("hidden");
+            if (user && user.id) {
+                try {
+                    const res = await fetch(`https://fintack.onrender.com/api/transactions/${user.id}`);
+                    const json = await res.json();
+                    refreshBudget(json.transactions || []);
+                } catch (e) {
+                    refreshBudget();
+                }
+            } else {
+                refreshBudget();
+            }
         });
     }
 
     if (closeExpenseBtn) {
         closeExpenseBtn.addEventListener("click", () => {
-            expenseManager.classList.add("hidden");
+            if (expenseManager) expenseManager.classList.add("hidden");
         });
     }
 
     if (budgetForm) {
         budgetForm.addEventListener("submit", (e) => {
             e.preventDefault();
-            budget.income = Number(document.getElementById("budget-income").value);
-            budget.savings = Number(document.getElementById("budget-savings").value);
+            if(budgetIncomeInput) budget.income = Number(budgetIncomeInput.value) || 0;
+            if(budgetSavingsInput) budget.savings = Number(budgetSavingsInput.value) || 0;
             localStorage.setItem("budget_data", JSON.stringify(budget));
-            refreshBudget();
+            
+            // Trigger a UI sync to apply the new budget values
+            syncDataAndUpdateUI();
             alert("Budget Saved!");
         });
     }
 
-    window.addExpense = function (title, amount) {
-        budget.expenses.push({ title, amount: Number(amount), date: new Date().toLocaleDateString() });
-        localStorage.setItem("budget_data", JSON.stringify(budget));
-        refreshBudget();
-    };
+    function refreshBudget(transactions = []) {
+        if (!budgetIncomeInput || !budgetSavingsInput) return;
 
-    window.removeExpense = function (index) {
-        budget.expenses.splice(index, 1);
-        localStorage.setItem("budget_data", JSON.stringify(budget));
-        refreshBudget();
-    };
+        budgetIncomeInput.value = budget.income || "";
+        budgetSavingsInput.value = budget.savings || "";
 
-    function refreshBudget() {
-        const budgetIncome = document.getElementById("budget-income");
-        const budgetSavings = document.getElementById("budget-savings");
-        const transactionList = document.getElementById("todays-transactions");
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        const currentMonthExpenses = Array.isArray(transactions) ? transactions.filter(t => {
+            const tDate = new Date(t.date);
+            return t.type === 'expense' && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear;
+        }) : [];
+
+        const spent = currentMonthExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        const income = Number(budget.income) || 0;
+        const savings = Number(budget.savings) || 0;
         
-        if (!budgetIncome || !budgetSavings) return;
-
-        budgetIncome.value = budget.income || "";
-        budgetSavings.value = budget.savings || "";
-
-        const spent = budget.expenses.reduce((sum, item) => sum + item.amount, 0);
-        const safeSpend = budget.income - budget.savings;
+        const safeSpend = income - savings;
         const remain = safeSpend - spent;
         const percent = safeSpend > 0 ? Math.min(100, (spent / safeSpend) * 100) : 0;
 
-        document.getElementById("month-spent").textContent = "₹" + spent.toFixed(0);
-        document.getElementById("month-remaining").textContent = "₹" + remain.toFixed(0);
-        document.getElementById("daily-allowance").textContent = "₹" + (remain / 30).toFixed(0);
+        if(monthSpentEl) monthSpentEl.textContent = "₹" + spent.toLocaleString("en-IN");
+        if(monthRemainingEl) monthRemainingEl.textContent = "₹" + remain.toLocaleString("en-IN");
         
-        const percentEl = document.getElementById("budget-percent");
-        const progressFill = document.getElementById("budget-progress-fill");
+        const today = new Date();
+        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        const daysRemaining = daysInMonth - today.getDate() + 1;
         
-        if (percentEl) percentEl.textContent = percent.toFixed(0) + "%";
-        if (progressFill) progressFill.style.width = percent + "%";
+        if(dailyAllowanceEl) dailyAllowanceEl.textContent = "₹" + Math.max(0, remain / daysRemaining).toFixed(0);
+        
+        if (budgetPercentEl) budgetPercentEl.textContent = percent.toFixed(0) + "%";
+        if (budgetProgressFill) budgetProgressFill.style.width = percent + "%";
 
-        if (transactionList) {
-            transactionList.innerHTML = "";
-            if (budget.expenses.length === 0) {
-                transactionList.innerHTML = `<div class="transaction-item"><span>No expenses added.</span></div>`;
+        if (todaysTransactionsList) {
+            todaysTransactionsList.innerHTML = "";
+            
+            if (currentMonthExpenses.length === 0) {
+                todaysTransactionsList.innerHTML = `<div class="transaction-item" style="justify-content:center; color:#8d97a5;"><span>No expenses recorded this month.</span></div>`;
                 return;
             }
 
-            budget.expenses.forEach((expense, index) => {
+            currentMonthExpenses.forEach(expense => {
                 const row = document.createElement("div");
                 row.className = "transaction-item";
                 row.innerHTML = `
                     <div>
-                        <strong>${expense.title}</strong><br>
-                        <small>${expense.date}</small>
+                        <strong>${expense.title || 'Expense'}</strong><br>
+                        <small>${new Date(expense.date).toLocaleDateString()}</small>
                     </div>
                     <div>
-                        <strong>₹${expense.amount}</strong><br>
-                        <button onclick="removeExpense(${index})" style="margin-top:6px;">Delete</button>
+                        <strong>₹${(Number(expense.amount)||0).toLocaleString("en-IN")}</strong>
                     </div>
                 `;
-                transactionList.appendChild(row);
+                todaysTransactionsList.appendChild(row);
             });
         }
     }
-    refreshBudget();
 
-    if (typeof Chart !== "undefined") {
+    function renderCharts(chartData, summaryData) {
+        if (typeof Chart === "undefined" || !chartData) return;
+
         const expenseCanvas = document.getElementById("expenseChart");
         if (expenseCanvas) {
-            new Chart(expenseCanvas, {
+            if (expenseChartInst) expenseChartInst.destroy();
+            expenseChartInst = new Chart(expenseCanvas, {
                 type: "line",
                 data: {
-                    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                    labels: chartData.labels,
                     datasets: [{
                         label: "Expenses",
-                        data: [18000, 22000, 19500, 24000, 26000, 23000],
-                        borderColor: "#58a6ff",
-                        backgroundColor: "rgba(88,166,255,.15)",
+                        data: chartData.expense,
+                        borderColor: "#ff4d4f",
+                        backgroundColor: "rgba(255,77,79,.15)",
                         fill: true,
                         tension: 0.4
                     }]
@@ -870,14 +1169,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const portfolioCanvas = document.getElementById("portfolioChart");
-        if (portfolioCanvas) {
-            new Chart(portfolioCanvas, {
+        if (portfolioCanvas && summaryData) {
+            if (portfolioChartInst) portfolioChartInst.destroy();
+            
+            const investments = (summaryData.netWorth || 0) * 0.45;
+            const savings = summaryData.monthlySavings > 0 ? summaryData.monthlySavings : 0;
+            const cash = Math.max(0, summaryData.balance - investments - savings);
+
+            // Give dummy values if all 0 to render an empty chart gracefully
+            const dataVals = (investments === 0 && savings === 0 && cash === 0) ? [1,1,1] : [investments, savings, cash];
+
+            portfolioChartInst = new Chart(portfolioCanvas, {
                 type: "doughnut",
                 data: {
-                    labels: ["Stocks", "Mutual Funds", "Crypto", "Cash"],
+                    labels: ["Investments", "Savings", "Cash"],
                     datasets: [{
-                        data: [40, 30, 10, 20],
-                        backgroundColor: ["#58a6ff", "#3ddc97", "#ffb84d", "#ff6b6b"]
+                        data: dataVals,
+                        backgroundColor: ["#9b51e0", "#3ddc97", "#58a6ff"]
                     }]
                 },
                 options: { responsive: true, plugins: { legend: { position: "bottom" } } }
@@ -886,13 +1194,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const incomeCanvas = document.getElementById("incomeChart");
         if (incomeCanvas) {
-            new Chart(incomeCanvas, {
+            if (incomeChartInst) incomeChartInst.destroy();
+            incomeChartInst = new Chart(incomeCanvas, {
                 type: "bar",
                 data: {
-                    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                    labels: chartData.labels,
                     datasets: [
-                        { label: "Income", data: [80000, 80000, 80000, 80000, 80000, 80000], backgroundColor: "#3ddc97" },
-                        { label: "Expense", data: [18000, 22000, 19500, 24000, 26000, 23000], backgroundColor: "#58a6ff" }
+                        { label: "Income", data: chartData.income, backgroundColor: "#00d26a" },
+                        { label: "Expense", data: chartData.expense, backgroundColor: "#ff4d4f" }
                     ]
                 },
                 options: { responsive: true }
@@ -901,25 +1210,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     window.formatMoney = function (value) {
-        return "₹" + Number(value).toLocaleString("en-IN");
+        return "₹" + Number(value || 0).toLocaleString("en-IN");
     };
 
     window.showToast = function (message) {
         console.log("[FinTack]", message);
     };
-
-    function calculateSummary(transactions) {
-        let income = 0;
-        let expenses = 0;
-
-        transactions.forEach(t => {
-            if (t.type === "income") income += Number(t.amount);
-            else expenses += Number(t.amount);
-        });
-
-        const balance = income - expenses;
-        return { income, expenses, balance, monthlySavings: balance, netWorth: balance };
-    }
 
     function attachGoalButtonEvents() {
         document.querySelectorAll(".goal-save-btn").forEach(btn => {
@@ -935,16 +1231,25 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.onclick = async (e) => {
                 e.stopPropagation();
                 editingGoalId = btn.dataset.id;
-                const goals = await fetchGoals(user.id);
-                const goal = goals.find(g => g.id == editingGoalId);
                 
-                if (!goal) return;
-                
-                if (editGoalTitle) editGoalTitle.value = goal.title;
-                if (editGoalTarget) editGoalTarget.value = goal.target_amount;
-                if (editGoalDeadline) editGoalDeadline.value = goal.deadline.split("T")[0];
-                
-                if (editGoalModal) editGoalModal.classList.remove("hidden");
+                try {
+                    const req = await fetch(`https://fintack.onrender.com/api/goals/${user.id}`);
+                    const json = await req.json();
+                    const goals = json.goals || [];
+                    
+                    if (!Array.isArray(goals)) return;
+                    
+                    const goal = goals.find(g => g.id == editingGoalId);
+                    if (!goal) return;
+                    
+                    if (editGoalTitle) editGoalTitle.value = goal.title || "";
+                    if (editGoalTarget) editGoalTarget.value = goal.target_amount || 0;
+                    if (editGoalDeadline && goal.deadline) editGoalDeadline.value = goal.deadline.split("T")[0];
+                    
+                    if (editGoalModal) editGoalModal.classList.remove("hidden");
+                } catch (err) {
+                    console.error("[FinTack] Error fetching goal for edit:", err);
+                }
             };
         });
 
@@ -957,27 +1262,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function deleteGoal(id) {
-        if (!confirm("Delete this goal?")) return;
+        if (!id || !confirm("Delete this goal?")) return;
         
-        const response = await fetch(`https://fintack.onrender.com/api/goals/${id}`, { method: "DELETE" });
-        const result = await response.json();
+        try {
+            const response = await fetch(`https://fintack.onrender.com/api/goals/${id}`, { method: "DELETE" });
+            const result = await response.json();
 
-        if (!result.success) {
-            alert(result.error);
-            return;
-        }
+            if (!result || !result.success) {
+                alert(result.error || "Failed to delete goal.");
+                return;
+            }
 
-        const currentUser = JSON.parse(localStorage.getItem("user"));
-        if (currentUser && typeof fetchGoals === "function") {
-            const goals = await fetchGoals(currentUser.id);
-            
-            updateNodeValue("active-goals-count", goals.length.toString());
-            updateNodeValue("profile-goals", goals.length.toString());
-
-            if (typeof renderGoals === "function") renderGoals(goals);
-            if (typeof updateGoalSummary === "function") updateGoalSummary(goals);
-            if (typeof updateAIRecommendations === "function") updateAIRecommendations(goals);
-            attachGoalButtonEvents();
+            await syncDataAndUpdateUI();
+        } catch (err) {
+            console.error("[FinTack] Delete Goal Error:", err);
+            alert("Failed to delete goal.");
         }
     }
 
@@ -987,18 +1286,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         setTimeout(() => bar.style.width = width, 300);
     });
 
-    console.log("%cFinTack Loaded Successfully", "color:#58a6ff;font-size:18px;font-weight:bold;");
+    console.log("%cFinTack Dynamic Core Loaded", "color:#58a6ff;font-size:18px;font-weight:bold;");
 });
 
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
         navigator.serviceWorker.register("service-worker.js").catch(err => {
-            console.warn("Service Worker registration failed:", err);
+            console.warn("[FinTack] Service Worker registration failed:", err);
         });
     });
 }
 
-function showAIResponse(content) {
+/* ==========================================================
+                    GLOBAL HELPER FUNCTIONS
+========================================================== */
+
+export function showAIResponse(content) {
     const oldCard = document.getElementById("ai-response-card");
     if (oldCard) oldCard.remove();
 
@@ -1025,7 +1328,8 @@ function showAIResponse(content) {
     if (searchBox) searchBox.insertAdjacentElement("afterend", card);
 }
 
-function generatePurchaseAnalysisCard(data) {
+export function generatePurchaseAnalysisCard(data) {
+    if (!data) data = {};
     const container = document.createElement("div");
     container.className = "purchase-analysis-wrapper";
 
@@ -1034,15 +1338,15 @@ function generatePurchaseAnalysisCard(data) {
         <div class="ai-card-grid">
             <div class="ai-mini-card">
                 <h4>Income</h4>
-                <h2>₹${(data.income || 0).toLocaleString()}</h2>
+                <h2>₹${(Number(data.income) || 0).toLocaleString()}</h2>
             </div>
             <div class="ai-mini-card">
                 <h4>Expenses</h4>
-                <h2>₹${(data.expenses || 0).toLocaleString()}</h2>
+                <h2>₹${(Number(data.expenses) || 0).toLocaleString()}</h2>
             </div>
             <div class="ai-mini-card">
                 <h4>Savings</h4>
-                <h2>₹${(data.monthlySavings || 0).toLocaleString()}</h2>
+                <h2>₹${(Number(data.monthlySavings) || 0).toLocaleString()}</h2>
             </div>
         </div>
         <div class="ai-recommendation">
@@ -1059,23 +1363,21 @@ function generatePurchaseAnalysisCard(data) {
 /* ==========================================================
                     AI CHAT SCROLL HELPER
 ========================================================== */
-function scrollChatToBottom() {
+export function scrollChatToBottom() {
     const chat = document.getElementById("ai-chat-body");
     if (!chat) return;
     
-    // requestAnimationFrame ensures the DOM has painted the new elements
-    // before we calculate the new scrollHeight
     requestAnimationFrame(() => {
         setTimeout(() => {
             chat.scrollTop = chat.scrollHeight;
-        }, 50); // 50ms buffer for complex UI cards to expand
+        }, 50); 
     });
 }
 
 /* ==========================================================
                     UPDATED MESSAGE FUNCTIONS
 ========================================================== */
-function addUserMessage(message) {
+export function addUserMessage(message) {
     const chat = document.getElementById("ai-chat-body");
     if (!chat) return;
     
@@ -1087,7 +1389,7 @@ function addUserMessage(message) {
     scrollChatToBottom();
 }
 
-function addAIMessage(content) {
+export function addAIMessage(content) {
     const chat = document.getElementById("ai-chat-body");
     if (!chat) return;
 
@@ -1108,7 +1410,7 @@ function addAIMessage(content) {
     scrollChatToBottom();
 }
 
-function showTyping() {
+export function showTyping() {
     const chat = document.getElementById("ai-chat-body");
     if (!chat) return;
 
@@ -1121,7 +1423,7 @@ function showTyping() {
     scrollChatToBottom();
 }
 
-function hideTyping() {
+export function hideTyping() {
     const typing = document.getElementById("typing");
     if (typing) typing.remove();
 }

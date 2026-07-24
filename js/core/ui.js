@@ -5,7 +5,7 @@
 /* =====================================================
                 RENDER STOCKS
 ===================================================== */
-function renderStocks(stocks) {
+export function renderStocks(stocks) {
     const container = document.getElementById('stock-container');
     if (!container) return;
 
@@ -31,7 +31,7 @@ function renderStocks(stocks) {
 /* =====================================================
                 RENDER NEWS
 ===================================================== */
-function renderNews(newsList) {
+export function renderNews(newsList) {
     const container = document.getElementById('news-container');
     if (!container) return;
 
@@ -62,7 +62,7 @@ function renderNews(newsList) {
 /* =====================================================
                 RENDER TRANSACTIONS
 ===================================================== */
-function renderTransactions(transactions) {
+export function renderTransactions(transactions) {
     const container = document.getElementById("transaction-container");
     if (!container) return;
 
@@ -107,7 +107,7 @@ function renderTransactions(transactions) {
 /* =====================================================
                 UPDATE DASHBOARD
 ===================================================== */
-function updateDashboard(summary) {
+export function updateDashboard(summary) {
     const netWorth = document.getElementById("net-worth");
     const monthlySaving = document.getElementById("monthly-saving");
     const goalText = document.getElementById("goal-progress");
@@ -132,7 +132,7 @@ function updateDashboard(summary) {
 /* =====================================================
                 UPDATE AI RECOMMENDATIONS
 ===================================================== */
-function updateAIRecommendations(goals) {
+export function updateAIRecommendations(goals) {
     const recommendationTextEl = document.getElementById("ai-recommendation-text");
     if (!recommendationTextEl) return;
 
@@ -162,7 +162,7 @@ function updateAIRecommendations(goals) {
 /* =====================================================
                 RENDER GOALS
 ===================================================== */
-function renderGoals(goals) {
+export function renderGoals(goals) {
     const container = document.getElementById("goals-container");
     if (!container) return;
 
@@ -233,7 +233,7 @@ function renderGoals(goals) {
 /* =====================================================
                 UPDATE GOAL SUMMARY
 ===================================================== */
-function updateGoalSummary(goals) {
+export function updateGoalSummary(goals) {
     const totalSaved = goals.reduce((sum, goal) => sum + (Number(goal.saved_amount) || 0), 0);
     const totalTarget = goals.reduce((sum, goal) => sum + (Number(goal.target_amount) || 0), 0);
     const progress = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;

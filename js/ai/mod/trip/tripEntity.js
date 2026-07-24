@@ -20,10 +20,12 @@ class TripEntity {
         )) {
 
             const tripName = message
+
                 .replace(/create\s+(a\s+)?trip/i, "")
                 .replace(/trip\s+called/i, "")
                 .replace(/planning\s+(a\s+)?trip\s+to/i, "")
                 .replace(/plan\s+(a\s+)?trip\s+to/i, "")
+                .replace(/trip\s+to/i, "")
                 .trim();
 
             if (tripName) {
@@ -46,6 +48,9 @@ class TripEntity {
 
                 .replace(/^add\s+members?/i, "")
                 .replace(/^add/i, "")
+                .replace(/^include/i, "")
+                .replace(/^invite/i, "")
+
                 .split(",")
 
                 .map(name => name.trim())
@@ -68,8 +73,24 @@ class TripEntity {
             intent => intent.action === "ADD_EXPENSE"
         )) {
 
-            const regex =
-                /(.+?)\s+paid\s*₹?\s*([\d,]+(?:\.\d+)?)\s*(?:for)?\s*(.+)/i;
+            /*
+                Supported Examples
+
+                Mohith paid 500 for fuel
+                Mohith spent 500 for fuel
+                Mohith spent ₹500 on fuel
+                Mohith paid Rs 500 for hotel
+                Mohith gave 500 for food
+                Mohith invested 1500 for resort
+                Mohith paid 1,250 for diesel
+                I paid 500 for fuel
+                Dimple spent 900 on snacks
+            */
+
+            const regex = new RegExp(
+    "^(.+?)\\s+(paid|spent|gave|invested)\\s+(?:rs\\.?|₹)?\\s*([\\d,]+(?:\\.\\d+)?)\\s*(?:for|on)?\\s*(.+)$",
+    "i"
+);
 
             const match = message.match(regex);
 
@@ -80,10 +101,12 @@ class TripEntity {
                     paid_by: match[1].trim(),
 
                     amount: Number(
-                        match[2].replace(/,/g, "")
+
+                        match[3].replace(/,/g, "")
+
                     ),
 
-                    title: match[3].trim(),
+                    title: match[4].trim(),
 
                     category: "General",
 
@@ -95,12 +118,10 @@ class TripEntity {
 
         }
 
-        /* ==========================================================
-                            RETURN
-        ========================================================== */
-
         return Object.keys(entities).length
+
             ? entities
+
             : null;
 
     }

@@ -16,8 +16,8 @@ import ResponseEngine from "./ResponseEngine.js";
 import MemoryEngine from "./MemoryEngine.js";
 import EventBus from "./EventBus.js";
 
-import ModuleRegistry from "../ModuleRegistry.js";
-import Modules from "../mod/index.js";
+import ModuleRegistry from "../ai/ModuleRegistry.js";
+import Modules from "../ai/mod/index.js";
 
 class Brain {
 
@@ -120,21 +120,31 @@ class Brain {
 
             // Step 2 - Intent Detection
             await this.intentEngine.detect(aiRequest);
+            const intent = aiRequest.intents;
+            console.log("Intent:", intent);
 
             // Step 3 - Entity Extraction
             await this.entityEngine.extract(aiRequest);
+            const entities = aiRequest.entities;
+            console.log("Entities:", entities);
 
             // Step 4 - Context Loading
             await this.contextEngine.load(aiRequest);
 
             // Step 5 - Decision Making
             await this.decisionEngine.decide(aiRequest);
+            const decision = aiRequest.actions;
+            console.log("Decision:", decision);
 
             // Step 6 - Execute Actions
             await this.actionExecutor.execute(aiRequest);
+            const actionResult = aiRequest.results;
+            console.log("Action:", actionResult);
 
             // Step 7 - Generate Response
             await this.responseEngine.generate(aiRequest);
+            const response = aiRequest.response;
+            console.log("Response:", response);
 
             return aiRequest.response;
 

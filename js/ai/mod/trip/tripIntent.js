@@ -1,210 +1,162 @@
-/* ==========================================================
-                    TRIP AI INTENT
-========================================================== */
+/* ==========================================================================
+   tripIntent.js
+   Trip Intent Detector
+========================================================================== */
 
-let activeTripId = null;
+class TripIntent {
 
-async function handleTripIntent(message) {
+    detect(aiRequest) {
 
-    const text = message.toLowerCase().trim();
-
-     console.log("MESSAGE:", message);
-    console.log("TEXT:", text);
-
-    /* =====================================================
-                    CREATE TRIP
-    ===================================================== */
-
-    if (
-        text.startsWith("create trip") ||
-        text.startsWith("create a trip") ||
-        text.includes("trip called")
-    ) {
-
-        const tripName = message
-            .replace(/create\s+a?\s*trip/i, "")
-            .replace(/called/i, "")
+        const text = aiRequest.message
+            .toLowerCase()
             .trim();
 
-        if (!tripName) {
-            return "Please provide a trip name.";
+        /* =====================================================
+                        CREATE TRIP
+        ===================================================== */
+
+        const createTripPatterns = [
+
+            /^create\s+(a\s+)?trip/,
+            /^start\s+(a\s+)?trip/,
+            /^new\s+trip/,
+            /^plan\s+(a\s+)?trip/,
+            /^planning\s+(a\s+)?trip/,
+            /trip\s+called/,
+            /trip\s+to/,
+            /going\s+to/,
+            /travel\s+to/,
+            /vacation\s+to/,
+            /holiday\s+to/
+
+        ];
+
+        if (
+
+            createTripPatterns.some(
+
+                pattern => pattern.test(text)
+
+            )
+
+        ) {
+
+            return {
+
+                module: "trip",
+
+                action: "CREATE_TRIP",
+
+                confidence: 100
+
+            };
+
         }
 
-        const user = JSON.parse(localStorage.getItem("user"));
+        /* =====================================================
+                        ADD MEMBERS
+        ===================================================== */
 
-        if (!user) {
-            return "Please login first.";
+        if (
+
+            text.startsWith("add ") ||
+
+            text.startsWith("include ") ||
+
+            text.startsWith("invite ")
+
+        ) {
+
+            return {
+
+                module: "trip",
+
+                action: "ADD_MEMBERS",
+
+                confidence: 95
+
+            };
+
         }
 
-        console.log("User Object:", user);
-        console.log("User ID:", user.id);
-        
-        const result = await TripStorage.createTrip(
-            user.id,
-            tripName
-        );
+        /* =====================================================
+                        ADD EXPENSE
+        ===================================================== */
 
-        if (!result.success) {
-            return "Couldn't create trip.";
+        if (
+
+            /(paid|spent|gave)\b/.test(text)
+
+        ) {
+
+            return {
+
+                module: "trip",
+
+                action: "ADD_EXPENSE",
+
+                confidence: 95
+
+            };
+
         }
 
-        activeTripId = result.trip.id;
-        window.activeTripId = result.trip.id;
+        /* =====================================================
+                        SUMMARY
+        ===================================================== */
 
-        const tripData = await TripStorage.getTripDetails(activeTripId);
-        console.log("Trip Details:", tripData);
-        if (tripData.success) {
-            return formatTripCard(tripData.trip);
+        if (
+
+            text.includes("summary") ||
+
+            text.includes("show summary") ||
+
+            text.includes("trip summary")
+
+        ) {
+
+            return {
+
+                module: "trip",
+
+                action: "SHOW_SUMMARY",
+
+                confidence: 90
+
+            };
+
         }
 
-        return formatTripCard(result.trip);
+        /* =====================================================
+                        SETTLEMENT
+        ===================================================== */
+
+        if (
+
+            text.includes("who owes") ||
+
+            text.includes("settlement") ||
+
+            text.includes("settle")
+
+        ) {
+
+            return {
+
+                module: "trip",
+
+                action: "SHOW_SETTLEMENTS",
+
+                confidence: 90
+
+            };
+
+        }
+
+        return null;
+
     }
-
-    /* =====================================================
-                    ADD MEMBERS
-    ===================================================== */
-
-    if (
-        text.startsWith("add ") ||
-        text.startsWith("add members")
-    ) {
-
-        if (!window.activeTripId) {
-            return "Create a trip first.";
-        }
-
-        const members = message
-            .replace(/^add members/i, "")
-            .replace(/^add/i, "")
-            .split(",")
-            .map(name => name.trim())
-            .filter(Boolean);
-
-        if (members.length === 0) {
-            return "Please enter member names.";
-        }
-
-        const result = await TripStorage.addMembers(
-            window.activeTripId,
-            members
-        );
-
-        if (!result.success) {
-            return "Couldn't add members.";
-        }
-
-        const tripData = await TripStorage.getTripDetails(
-            window.activeTripId
-        );
-
-        console.log("Trip Details:", tripData);
-
-        if (!tripData.success) {
-            return "Couldn't load updated trip.";
-        }
-
-        const trip = tripData.trip;
-
-// Attach the members array from the API response
-trip.members = tripData.members;
-
-return formatMembersCard(trip);
-    }
-
-    /* =====================================================
-                    ADD EXPENSE
-    ===================================================== */
-
-    if (text.includes("paid")) {
-
-        if (!window.activeTripId) {
-            return "Create a trip first.";
-        }
-
-        const regex =
-            /(.+?) paid ?₹?(\d+)\s*(?:for)?\s*(.+)/i;
-
-        const match = message.match(regex);
-
-        if (!match) {
-            return null;
-        }
-
-        const paid_by = match[1].trim();
-        const amount = Number(match[2]);
-        const title = match[3].trim();
-
-        const result = await TripStorage.addExpense(
-            window.activeTripId,
-            {
-                title,
-                amount,
-                paid_by,
-                category: "General"
-            }
-        );
-
-        if (!result.success) {
-            return "Couldn't save expense.";
-        }
-
-        return formatExpenseCard({
-            title,
-            amount,
-            paidBy: paid_by
-        });
-    }
-
-    /* =====================================================
-                    SHOW SUMMARY
-    ===================================================== */
-
-    if (
-        text.includes("summary") ||
-        text.includes("show trip")
-    ) {
-
-        if (!window.activeTripId) {
-            return "Create a trip first.";
-        }
-
-        const tripData = await TripStorage.getTripDetails(
-            window.activeTripId
-        );
-
-        if (!tripData.success) {
-            return "Couldn't load trip.";
-        }
-
-        return formatTripSummary(tripData.trip);
-    }
-
-    /* =====================================================
-                    SHOW SETTLEMENTS
-    ===================================================== */
-
-    if (
-        text.includes("who owes") ||
-        text.includes("settlement")
-    ) {
-
-        if (!window.activeTripId) {
-            return "Create a trip first.";
-        }
-
-        const result = await TripStorage.getSettlements(
-            window.activeTripId
-        );
-
-        if (!result.success) {
-            return "Couldn't calculate settlements.";
-        }
-
-        return formatSettlementCard(
-            result.settlements
-        );
-    }
-
-    return null;
 
 }
+
+export default TripIntent;

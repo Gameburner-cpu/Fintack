@@ -7,7 +7,7 @@ const API_BASE_URL = "https://fintack.onrender.com/api";
 /* =====================================================
                     DASHBOARD
 ===================================================== */
-async function fetchDashboardData() {
+export async function fetchDashboardData() {
     try {
         const response = await fetch(`${API_BASE_URL}/dashboard`);
         if (!response.ok) {
@@ -23,7 +23,7 @@ async function fetchDashboardData() {
 /* =====================================================
                 USER TRANSACTIONS
 ===================================================== */
-async function fetchTransactions(userId) {
+export async function fetchTransactions(userId) {
     try {
         const response = await fetch(`${API_BASE_URL}/transactions/${userId}`);
         if (!response.ok) {
@@ -40,7 +40,7 @@ async function fetchTransactions(userId) {
 /* =====================================================
                     USER GOALS
 ===================================================== */
-async function fetchGoals(userId) {
+export async function fetchGoals(userId) {
     try {
         const response = await fetch(`${API_BASE_URL}/goals/${userId}`);
         if (!response.ok) {
@@ -57,7 +57,7 @@ async function fetchGoals(userId) {
 /* =====================================================
                 ADD TRANSACTION
 ===================================================== */
-async function addTransaction(transaction) {
+export async function addTransaction(transaction) {
     try {
         const response = await fetch(`${API_BASE_URL}/transactions`, {
             method: "POST",

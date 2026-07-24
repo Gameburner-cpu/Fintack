@@ -1,7 +1,16 @@
 /* ==========================================================================
    tripFormatter.js
-   Formats TripManager results into AI responses.
 ========================================================================== */
+
+import {
+
+    formatTripCard,
+    formatMembersCard,
+    formatExpenseCard,
+    formatTripSummary,
+    formatSettlementCard
+
+} from "./tripCards.js";
 
 class TripFormatter {
 
@@ -9,63 +18,57 @@ class TripFormatter {
 
         switch (action.action) {
 
-            /* ==========================================================
-                            CREATE TRIP
-            ========================================================== */
-
             case "CREATE_TRIP":
 
                 return {
 
-                    message: result.success
-                        ? `Trip "${aiRequest.entities.tripName}" created successfully.`
-                        : (result.message || "Unable to create trip."),
+                    message:
+                        result.success
+                            ? `✅ Trip "${aiRequest.entities.tripName}" created successfully.`
+                            : (result.message || "Unable to create trip."),
 
-                    html: result.success
-                        ? formatTripCard(result.trip)
-                        : ""
+                    html:
+                        result.success
+                            ? formatTripCard(result.trip)
+                            : ""
 
                 };
-
-            /* ==========================================================
-                            ADD MEMBERS
-            ========================================================== */
 
             case "ADD_MEMBERS":
 
-                return {
+    return {
 
-                    message: result.success
-                        ? "Members added successfully."
-                        : (result.message || "Unable to add members."),
+        message:
+            result.success
+                ? "✅ Members added successfully."
+                : (result.message || "Unable to add members."),
 
-                    html: result.success
-                        ? formatMembersCard(result.trip)
-                        : ""
+        html:
+            result.success
+                ? formatMembersCard({
 
-                };
+                    members: result.members
 
-            /* ==========================================================
-                            ADD EXPENSE
-            ========================================================== */
+                })
+                : ""
+
+    };
 
             case "ADD_EXPENSE":
 
                 return {
 
-                    message: result.success
-                        ? "Expense added successfully."
-                        : (result.message || "Unable to add expense."),
+                    message:
+                        result.success
+                            ? "✅ Expense added successfully."
+                            : (result.message || "Unable to add expense."),
 
-                    html: result.success
-                        ? formatExpenseCard(aiRequest.entities.expense)
-                        : ""
+                    html:
+                        result.success
+                            ? formatExpenseCard(aiRequest.entities.expense)
+                            : ""
 
                 };
-
-            /* ==========================================================
-                            SHOW SUMMARY
-            ========================================================== */
 
             case "SHOW_SUMMARY":
 
@@ -76,10 +79,6 @@ class TripFormatter {
                     html: formatTripSummary(result)
 
                 };
-
-            /* ==========================================================
-                            SHOW SETTLEMENTS
-            ========================================================== */
 
             case "SHOW_SETTLEMENTS":
 
@@ -107,4 +106,4 @@ class TripFormatter {
 
 }
 
-export default TripFormatter;
+export default TripFormatter;   
