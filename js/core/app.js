@@ -1,7 +1,7 @@
 /* ==========================================================
                     FINTACK APP.JS
 ========================================================== */
-
+const aiChatBody = document.getElementById("ai-chat-body");
 document.addEventListener("DOMContentLoaded", async () => {
     /* ======================================================
                             DOM ELEMENTS
@@ -58,6 +58,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // AI Chat Elements
     const aiSearchInput = document.getElementById("ai-search-input");
+    const aiHistoryModal = document.getElementById("ai-history-modal");
+    const closeHistory = document.getElementById("close-history");
+    const historyList = document.getElementById("history-list");
+    const newChatBtn = document.getElementById("new-chat-btn");
+    const aiHistoryBtn = document.getElementById("ai-history-btn");
     const aiOptimizeBtn = document.getElementById("ai-optimize-btn");
     const aiModal = document.getElementById("ai-chat-modal");
     const aiInput = document.getElementById("ai-chat-input");
@@ -65,12 +70,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const closeAI = document.getElementById("close-ai-chat"); 
 
     /* ======================================================
-                            STATE VARIABLES
+                    STATE VARIABLES
     ====================================================== */
     let selectedGoalId = null;
     let editingGoalId = null;
     let transactionType = "expense";
-    let isLogin = true; 
+    let isLogin = true;
+
+    let currentChatId = null;
+
     let budget = JSON.parse(localStorage.getItem("budget_data")) || {
         income: 0,
         savings: 0,
@@ -243,9 +251,120 @@ document.addEventListener("DOMContentLoaded", async () => {
     /* ======================================================
                     AI INTEL CORE ENGINE
     ====================================================== */
+    async function loadHistory() {
+        if (!user) return;
+        
+        const result = await AIStorage.getChats(user.id);
+        
+        if (!result.success) {
+            historyList.innerHTML = `
+                <div class="history-empty">
+                    Unable to load conversations.
+                </div>
+            `;
+            return;
+        }
+
+        const chats = result.chats;
+        
+        if (chats.length === 0) {
+            historyList.innerHTML = `
+                <div class="history-empty">
+                    No conversations yet.
+                </div>
+            `;
+            return;
+        }
+
+        historyList.innerHTML = "";
+        
+        chats.forEach(chat => {
+            const item = document.createElement("div");
+            item.className = "history-item";
+            item.dataset.id = chat.id;
+            item.innerHTML = `
+            <div class="history-chat">
+                <i class="fa-solid fa-comments"></i>
+                <span>${chat.title}</span>
+            </div>
+            <button
+                class="delete-chat-btn"
+                data-id="${chat.id}">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        `;
+            historyList.appendChild(item);
+            item.addEventListener("click", async () => {
+                currentChatId = chat.id;
+                Navigation.close("ai-history");
+                Navigation.open(
+                    "ai-chat",
+                    aiModal
+                );
+                loadChat(chat.id);
+        });
+            const deleteBtn = item.querySelector(".delete-chat-btn");
+            deleteBtn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (!confirm("Delete this conversation?")) return;
+                const result = await AIStorage.deleteChat(chat.id);
+                if (result.success) {
+                    loadHistory();
+                }
+            });
+        });
+    }
+
+    if (aiHistoryBtn) {
+        aiHistoryBtn.addEventListener("click", () => {
+            Navigation.open(
+                "ai-history",
+                aiHistoryModal
+            );
+            loadHistory();
+        });
+    }
+
+    async function loadChat(chatId) {
+        const result = await AIStorage.getMessages(chatId);
+        
+        if (!result.success) return;
+        
+        aiChatBody.innerHTML = "";
+        
+        result.messages.forEach(msg => {
+            if (msg.role === "user") {
+                addUserMessage(msg.message);
+            } else {
+                addAIMessage(msg.message);
+            }
+        });
+        
+        scrollChatToBottom();
+    }
+
+    // Close when X is clicked
+    if (closeHistory) {
+        closeHistory.addEventListener("click", () => {
+            Navigation.close("ai-history");
+        });
+    }
+
+    // Close when clicking outside
+    if (aiHistoryModal) {
+        aiHistoryModal.addEventListener("click", (e) => {
+            if (e.target === aiHistoryModal) {
+                Navigation.close("ai-history");
+            }
+        });
+    }
+
     if (aiSearchInput) {
         aiSearchInput.addEventListener("focus", () => {
-            if (aiModal) aiModal.classList.remove("hidden");
+            if (aiModal) Navigation.open(
+                "ai-chat",
+                aiModal
+            );
             aiSearchInput.blur();
         });
 
@@ -280,7 +399,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (closeAI) {
         closeAI.addEventListener("click", () => {
-            aiModal.classList.add("hidden");
+            Navigation.close("ai-chat");
         });
     }
 
@@ -289,9 +408,40 @@ document.addEventListener("DOMContentLoaded", async () => {
             const question = aiInput.value.trim();
             if (!question) return;
 
+            // Create chat only for the first message
+            if (!currentChatId) {
+                const title = question.length > 40
+                    ? question.substring(0, 40) + "..."
+                    : question;
+
+                const result = await AIStorage.createChat(
+                    user.id,
+                    title
+                );
+
+                if (!result.success) {
+                    alert("Unable to create chat.");
+                    return;
+                }
+
+                currentChatId = result.chat.id;
+
+                localStorage.setItem(
+                    "currentChatId",
+                    currentChatId
+                );
+            }
+
             addUserMessage(question);
             aiInput.value = "";
             showTyping();
+
+            // Save the user's message to storage
+            await AIStorage.saveMessage(
+                currentChatId,
+                "user",
+                question
+            );
 
             try {
                 const dashboard = typeof fetchDashboardData === "function" ? await fetchDashboardData() : { summary: null };
@@ -304,10 +454,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                     goals
                 });
 
-                setTimeout(() => {
-                    hideTyping();
-                    addAIMessage(answer);
-                }, 800);
+                // Save the AI's response to storage
+                setTimeout(async () => {
+                hideTyping();
+                addAIMessage(answer);
+                await AIStorage.saveMessage(
+                    currentChatId,
+                    "assistant",
+                    answer
+                );
+            }, 800);
             } catch (err) {
                 hideTyping();
                 addAIMessage("Sorry, I ran into an issue retrieving your data.");
@@ -900,6 +1056,25 @@ function generatePurchaseAnalysisCard(data) {
     return container;
 }
 
+/* ==========================================================
+                    AI CHAT SCROLL HELPER
+========================================================== */
+function scrollChatToBottom() {
+    const chat = document.getElementById("ai-chat-body");
+    if (!chat) return;
+    
+    // requestAnimationFrame ensures the DOM has painted the new elements
+    // before we calculate the new scrollHeight
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            chat.scrollTop = chat.scrollHeight;
+        }, 50); // 50ms buffer for complex UI cards to expand
+    });
+}
+
+/* ==========================================================
+                    UPDATED MESSAGE FUNCTIONS
+========================================================== */
 function addUserMessage(message) {
     const chat = document.getElementById("ai-chat-body");
     if (!chat) return;
@@ -909,7 +1084,7 @@ function addUserMessage(message) {
     div.innerHTML = message;
     chat.appendChild(div);
     
-    chat.scrollTop = chat.scrollHeight;
+    scrollChatToBottom();
 }
 
 function addAIMessage(content) {
@@ -930,7 +1105,7 @@ function addAIMessage(content) {
     }
 
     chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
+    scrollChatToBottom();
 }
 
 function showTyping() {
@@ -943,7 +1118,7 @@ function showTyping() {
     typing.innerHTML = `🤖 FinTack AI is analyzing...`;
     
     chat.appendChild(typing);
-    chat.scrollTop = chat.scrollHeight;
+    scrollChatToBottom();
 }
 
 function hideTyping() {

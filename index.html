@@ -26,6 +26,28 @@
             50% { opacity: 0.5; }
             100% { opacity: 1; }
         }
+
+        /* --- AI CHAT SCROLL FIXES --- */
+        .ai-chat-window {
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh; /* Prevents modal from growing off-screen */
+            height: 100%;
+        }
+        
+        .ai-main-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden; /* Contains the children */
+        }
+        
+        .ai-chat-body {
+            flex: 1 1 auto; /* Tells the body to take up all remaining space */
+            overflow-y: auto; /* Enables vertical scrolling */
+            scroll-behavior: smooth;
+            padding-bottom: 15px; /* Adds breathing room at the bottom */
+        }
     </style>
 </head>
 <body>
@@ -104,7 +126,10 @@
             
             <!-- AI Search -->
             <div class="search-container">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <i
+                    id="ai-history-btn"
+                    class="fa-solid fa-wand-magic-sparkles">
+                </i>
                 <input class="ai-search" id="ai-search-input" type="text" placeholder="Ask FinTack AI anything...">
             </div>
 
@@ -593,41 +618,79 @@
 ========================================== -->
 <div id="ai-chat-modal" class="modal-overlay hidden">
     <div class="ai-chat-window">
-        <div class="ai-chat-header">
-    <div class="ai-header-info">
-        <i class="fa-solid fa-robot"></i>
-        <div>
-            <h3>FinTack AI</h3>
-            <span>Financial Assistant</span>
-        </div>
-    </div>
 
-    <button
-        id="close-ai-chat"
-        class="ai-close-btn">
-        <i class="fa-solid fa-xmark"></i>
-    </button>
-</div>
 
-        <div id="ai-chat-body" class="ai-chat-body">
-            <div class="ai-message">
-                👋 Hello!
-                <br><br>
-                I'm FinTack AI.
-                <br><br>
-                Ask me anything about your finances.
+
+        <!-- ================= MAIN CHAT ================= -->
+        <div class="ai-main-panel">
+            <div class="ai-chat-header">
+                <div class="ai-header-info">
+                    <i class="fa-solid fa-robot"></i>
+                    <div>
+                        <h3>FinTack AI</h3>
+                        <span>Financial Assistant</span>
+                    </div>
+                </div>
+                <button
+                    id="close-ai-chat"
+                    class="ai-close-btn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="ai-chat-body" class="ai-chat-body">
+                <div class="ai-message">
+                    👋 Hello!
+                    <br><br>
+                    I'm FinTack AI.
+                    <br><br>
+                    Ask me anything about your finances.
+                </div>
+            </div>
+
+            <div class="ai-chat-footer">
+                <input
+                    id="ai-chat-input"
+                    type="text"
+                    placeholder="Ask anything..."
+                >
+                <button id="ai-send-btn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
             </div>
         </div>
 
-        <div class="ai-chat-footer">
-            <input
-                id="ai-chat-input"
-                type="text"
-                placeholder="Ask anything..."
-            >
-            <button id="ai-send-btn">
-                <i class="fa-solid fa-paper-plane"></i>
+    </div>
+</div>
+
+<!-- ==========================================
+            AI HISTORY MODAL
+========================================== -->
+
+<div id="ai-history-modal" class="modal-overlay hidden">
+    <div class="ai-history-window">
+        <div class="ai-history-header">
+            <h2>Conversations</h2>
+            <button
+                id="close-history"
+                class="ai-close-btn">
+                <i class="fa-solid fa-xmark"></i>
             </button>
+        </div>
+
+        <button
+            id="new-chat-btn"
+            class="btn-primary">
+            <i class="fa-solid fa-plus"></i>
+                New Chat
+        </button>
+
+        <div
+            id="history-list"
+            class="history-list">
+            <div class="history-empty">
+                No conversations yet.
+            </div>
         </div>
     </div>
 </div>
@@ -653,15 +716,19 @@
 <script src="js/trip/tripFormatter.js"></script>
 <script src="js/trip/tripIntent.js"></script>
 
-<!-- ================= AI Main ================= -->
+<!-- ================= AI Storage ================= -->
+
 <script src="js/aiStorage.js"></script>
-<script src="js/ai.js"></script>
+
+<!-- ================= AI Main ================= -->
+
 <script src="js/ai/ai.js"></script>
 
 <!-- ================= Core ================= -->
 
 <script src="js/core/api.js"></script>
 <script src="js/core/ui.js"></script>
+<script src="js/core/navigation.js"></script>
 <script src="js/core/app.js"></script>
 
 </body>
