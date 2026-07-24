@@ -129,6 +129,7 @@ const TripStorage = {
         const response = await fetch(
 
             `${TRIP_API}/${tripId}/settlements`
+
         );
 
         return await response.json();
@@ -140,6 +141,7 @@ const TripStorage = {
         const response = await fetch(
 
             `${TRIP_API}?user_id=${userId}`
+
         );
 
         return await response.json();
@@ -147,3 +149,5 @@ const TripStorage = {
     }
 
 };
+
+export default TripStorage;
