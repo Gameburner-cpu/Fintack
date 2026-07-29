@@ -1,5 +1,6 @@
 /* ==========================================================================
    tripFormatter.js
+   Formats trip actions into clear, human-friendly FinTack AI responses.
 ========================================================================== */
 
 import {
@@ -99,8 +100,7 @@ class TripFormatter {
                             ? "✅ Expense updated successfully."
                             : (result.message || "Unable to update expense."),
 
-                    html:
-                        ""
+                    html: ""
 
                 };
 
@@ -117,8 +117,7 @@ class TripFormatter {
                             ? "🗑️ Expense deleted successfully."
                             : (result.message || "Unable to delete expense."),
 
-                    html:
-                        ""
+                    html: ""
 
                 };
 
@@ -128,17 +127,26 @@ class TripFormatter {
 
             case "SHOW_SUMMARY":
 
+                if (!result.success) {
+
+                    return {
+
+                        message:
+                            result.message ||
+                            "Unable to load the trip summary.",
+
+                        html: ""
+
+                    };
+
+                }
+
                 return {
 
                     message: "",
 
                     html:
-
-                        result.success
-
-                            ? formatTripSummary(result)
-
-                            : ""
+                        formatTripSummary(result)
 
                 };
 
@@ -148,17 +156,37 @@ class TripFormatter {
 
             case "SHOW_SETTLEMENTS":
 
+                if (!result.success) {
+
+                    return {
+
+                        message:
+                            result.message ||
+                            "Unable to calculate trip settlements.",
+
+                        html: ""
+
+                    };
+
+                }
+
                 return {
+
+                    /*
+                     * Keep the text message empty because the settlement
+                     * card is the primary response. The card formatter
+                     * should present balances as clear actions such as:
+                     *
+                     * "Mohith pays Dimple ₹500"
+                     *
+                     * rather than requiring the user to interpret
+                     * positive/negative balances.
+                     */
 
                     message: "",
 
                     html:
-
-                        result.success
-
-                            ? formatSettlementCard(result)
-
-                            : ""
+                        formatSettlementCard(result)
 
                 };
 
@@ -231,9 +259,7 @@ class TripFormatter {
                 return {
 
                     message:
-
-                        result.message ||
-
+                        result?.message ||
                         "Something went wrong.",
 
                     html: ""

@@ -582,104 +582,106 @@ export function formatTripSummary(summary) {
 export function formatSettlementCard(data) {
 
     const settlements =
-
-        data?.settlements ||
-
-        [];
+        Array.isArray(data?.settlements)
+            ? data.settlements
+            : [];
 
     const balances =
+        data?.balances &&
+        typeof data.balances === "object"
+            ? data.balances
+            : {};
 
-        data?.balances ||
+    /*
+       A positive balance means the member should receive money.
+       A negative balance means the member owes money.
+       We keep this information available, but present it in
+       plain language instead of showing confusing +/- numbers.
+    */
 
-        {};
+    const balanceEntries =
+        Object.entries(balances);
 
-    const balanceRows =
+    const memberCount =
+        balanceEntries.length;
 
-        Object.keys(balances).length
+    /*
+       Calculate total money represented by positive balances.
+       This is useful as a quick settlement overview.
+    */
 
-            ? Object.entries(balances).map(
+    const totalToSettle =
+        balanceEntries.reduce(
+            (total, [, amount]) => {
 
-                ([member, amount]) => `
+                const value =
+                    Number(amount || 0);
 
-                <tr>
+                return value > 0
+                    ? total + value
+                    : total;
 
-                    <td>
+            },
+            0
+        );
 
-                        👤 ${escapeHtml(member)}
+    /*
+       Build simple "who pays whom" cards.
+    */
 
-                    </td>
-
-                    <td>
-
-                        ${money(amount)}
-
-                    </td>
-
-                </tr>
-
-                `
-
-            ).join("")
-
-            : `
-
-            <tr>
-
-                <td colspan="2">
-
-                    No balance information available.
-
-                </td>
-
-            </tr>
-
-            `;
-
-    const settlementRows =
-
+    const settlementCards =
         settlements.length
 
             ? settlements.map(settlement => {
 
                 const from =
-
                     settlement.from ||
-
                     settlement.from_member ||
-
+                    settlement.payer ||
                     "Unknown";
 
                 const to =
-
                     settlement.to ||
-
                     settlement.to_member ||
-
+                    settlement.receiver ||
                     "Unknown";
+
+                const amount =
+                    Number(
+                        settlement.amount || 0
+                    );
 
                 return `
 
-                <tr>
+                <div class="trip-settlement-item">
 
-                    <td>
+                    <div class="trip-settlement-route">
 
-                        ${escapeHtml(from)}
+                        <span class="trip-settlement-person">
+                            👤 ${escapeHtml(from)}
+                        </span>
 
-                    </td>
+                        <span class="trip-settlement-arrow">
+                            →
+                        </span>
 
-                    <td>
+                        <span class="trip-settlement-person">
+                            👤 ${escapeHtml(to)}
+                        </span>
 
-                        ${escapeHtml(to)}
+                    </div>
 
-                    </td>
+                    <div class="trip-settlement-payment">
 
-                    <td>
+                        <span>Pay</span>
 
-                        ${money(settlement.amount)}
+                        <strong>
+                            ${money(amount)}
+                        </strong>
 
-                    </td>
+                    </div>
 
-                </tr>
+                </div>
 
                 `;
 
@@ -687,87 +689,186 @@ export function formatSettlementCard(data) {
 
             : `
 
-            <tr>
+            <div class="trip-settlement-complete">
 
-                <td colspan="3">
+                <div class="trip-settlement-complete-icon">
+                    🎉
+                </div>
 
-                    🎉 Everyone is settled up.
+                <strong>
+                    Everyone is settled up!
+                </strong>
 
-                </td>
+                <span>
+                    No payments are required.
+                </span>
 
-            </tr>
+            </div>
 
             `;
 
+    /*
+       Build optional explanation of each member's position.
+       This avoids displaying raw negative numbers without context.
+    */
+
+    const memberStatus =
+        balanceEntries.length
+
+            ? balanceEntries.map(
+                ([member, amount]) => {
+
+                    const value =
+                        Number(amount || 0);
+
+                    let status = "";
+                    let statusClass = "";
+
+                    if (value < 0) {
+
+                        status =
+                            `Owes ${money(Math.abs(value))}`;
+
+                        statusClass =
+                            "owes";
+
+                    }
+
+                    else if (value > 0) {
+
+                        status =
+                            `Gets back ${money(value)}`;
+
+                        statusClass =
+                            "receives";
+
+                    }
+
+                    else {
+
+                        status =
+                            "Settled";
+
+                        statusClass =
+                            "settled";
+
+                    }
+
+                    return `
+
+                    <div class="trip-member-balance-item">
+
+                        <span class="trip-member-balance-name">
+
+                            👤 ${escapeHtml(member)}
+
+                        </span>
+
+                        <span class="trip-member-balance-status ${statusClass}">
+
+                            ${status}
+
+                        </span>
+
+                    </div>
+
+                    `;
+
+                }
+            ).join("")
+
+            : "";
+
     return `
 
-    <div class="trip-card">
+    <div class="trip-card trip-settlement-card">
 
         <div class="trip-header">
 
-            <h3>💸 Trip Settlements</h3>
+            <h3>
+                💸 Trip Settlement
+            </h3>
 
         </div>
 
         <div class="trip-body">
 
-            <h4>
+            ${
+                memberCount
+                    ? `
+                    <div class="trip-settlement-overview">
 
-                Member Balances
+                        <div class="trip-settlement-overview-item">
 
-            </h4>
+                            <span>Members</span>
 
-            <table class="trip-balance-table">
+                            <strong>
+                                ${memberCount}
+                            </strong>
 
-                <thead>
+                        </div>
 
-                    <tr>
+                        <div class="trip-settlement-overview-item">
 
-                        <th>Member</th>
+                            <span>Amount to settle</span>
 
-                        <th>Balance</th>
+                            <strong>
+                                ${money(totalToSettle)}
+                            </strong>
 
-                    </tr>
+                        </div>
 
-                </thead>
+                    </div>
+                    `
+                    : ""
+            }
 
-                <tbody>
+            <div class="trip-settlement-section">
 
-                    ${balanceRows}
+                <h4>
+                    Who should pay whom?
+                </h4>
 
-                </tbody>
+                <div class="trip-settlement-list">
 
-            </table>
+                    ${settlementCards}
 
-            <h4>
+                </div>
 
-                Settlements
+            </div>
 
-            </h4>
+            ${
+                memberStatus
+                    ? `
+                    <div class="trip-settlement-section trip-member-status-section">
 
-            <table class="trip-settlement-table">
+                        <h4>
+                            Member Status
+                        </h4>
 
-                <thead>
+                        <div class="trip-member-balance-list">
 
-                    <tr>
+                            ${memberStatus}
 
-                        <th>From</th>
+                        </div>
 
-                        <th>To</th>
+                        <div class="trip-settlement-help">
 
-                        <th>Amount</th>
+                            <span>
+                                💡
+                            </span>
 
-                    </tr>
+                            <p>
+                                "Owes" means that person needs to pay.
+                                "Gets back" means that person should receive money.
+                            </p>
 
-                </thead>
+                        </div>
 
-                <tbody>
-
-                    ${settlementRows}
-
-                </tbody>
-
-            </table>
+                    </div>
+                    `
+                    : ""
+            }
 
         </div>
 
