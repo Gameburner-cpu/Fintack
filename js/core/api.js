@@ -4,6 +4,8 @@
 
 const API_BASE_URL = "https://fintack.onrender.com/api";
 
+import NotificationManager from "../notification/notificationManager.js";
+
 /* =====================================================
                     DASHBOARD
 ===================================================== */
@@ -59,6 +61,9 @@ export async function fetchGoals(userId) {
 ===================================================== */
 export async function addTransaction(transaction) {
     try {
+        
+        console.log("🔔 ADD TRANSACTION INPUT:", transaction);
+
         const response = await fetch(`${API_BASE_URL}/transactions`, {
             method: "POST",
             headers: {
@@ -66,7 +71,46 @@ export async function addTransaction(transaction) {
             },
             body: JSON.stringify(transaction)
         });
-        return await response.json();
+
+        const result = await response.json();
+
+        /* =================================================
+                    CREATE NOTIFICATION
+        ================================================= */
+        if (response.ok && result.success !== false) {
+            const userId = transaction.userId || transaction.user_id;
+
+            if (userId) {
+                const amount = Number(transaction.amount) || 0;
+                const type = String(transaction.type || "").toLowerCase();
+                const title = transaction.title || transaction.description || transaction.category || "Transaction";
+
+                if (type === "income") {
+                    NotificationManager.create(userId, {
+                        type: "income",
+                        title: "Income Added",
+                        message: `₹${amount.toLocaleString("en-IN")} received from ${title}`,
+                        icon: "fa-solid fa-arrow-trend-up",
+                        data: {
+                            transaction
+                        }
+                    });
+                } else if (type === "expense") {
+                    NotificationManager.create(userId, {
+                        type: "expense",
+                        title: "Expense Added",
+                        message: `₹${amount.toLocaleString("en-IN")} spent on ${title}`,
+                        icon: "fa-solid fa-wallet",
+                        data: {
+                            transaction
+                        }
+                    });
+                }
+            }
+        }
+
+        return result;
+
     } catch (error) {
         console.error("Add Transaction Error:", error);
         return {

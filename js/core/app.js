@@ -9,6 +9,8 @@ import {
     addTransaction
 } from "./api.js";
 import Calendar from "../calendar/calendar.js";
+import NotificationUI from "../notification/notificationUI.js";
+import NotificationManager from "../notification/notificationManager.js";
 import {
     renderStocks,
     renderNews,
@@ -154,6 +156,83 @@ document.addEventListener("DOMContentLoaded", async () => {
         ========================================================== */
 
         await Calendar.initialize(user.id);
+
+        /* ==========================================================
+                        NOTIFICATION SYSTEM
+        ========================================================== */
+        NotificationUI.initialize(user.id);
+        console.log(
+            "🔔 NOTIFICATION SYSTEM INITIALIZED");
+
+        const notificationButton =
+            document.getElementById("notificationButton");
+        const notificationClose =
+            document.getElementById("notificationClose");
+        const notificationOverlay =
+            document.getElementById("notificationOverlay");
+        const notificationModal =
+            document.getElementById("notificationModal");
+        const notificationMarkAll =
+            document.getElementById("notificationMarkAll");
+        const notificationClearAll =
+            document.getElementById("notificationClearAll");
+
+        /* ==========================================================
+                        OPEN NOTIFICATIONS
+        ========================================================== */
+        notificationButton?.addEventListener(
+            "click",
+            () => {
+                NotificationUI.open();
+            }
+        );
+
+        /* ==========================================================
+                        CLOSE BUTTON
+        ========================================================== */
+        notificationClose?.addEventListener(
+            "click",
+            () => {
+                NotificationUI.close();
+            }
+        );
+
+        /* ==========================================================
+                        CLICK OUTSIDE TO CLOSE
+        ========================================================== */
+        notificationOverlay?.addEventListener(
+            "click",
+            () => {
+                NotificationUI.close();
+            }
+        );
+
+        notificationModal?.addEventListener(
+            "click",
+            (event) => {
+                event.stopPropagation();
+            }
+        );
+
+        /* ==========================================================
+                        MARK ALL AS READ
+        ========================================================== */
+        notificationMarkAll?.addEventListener(
+            "click",
+            () => {
+                NotificationUI.markAllAsRead();
+            }
+        );
+
+        /* ==========================================================
+                        CLEAR ALL
+        ========================================================== */
+        notificationClearAll?.addEventListener(
+            "click",
+            () => {
+                NotificationUI.clearAll();
+            }
+        );
 
         console.log("🗓️ CALENDAR ENGINE STATE:", Calendar.getCalendarState());
         console.log("🗓️ CALENDAR DAYS:", Calendar.getCalendarDays());
@@ -887,34 +966,126 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (transactionForm) {
-        transactionForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            if (!user || !user.id) return;
-            
-            const title = transactionNameInput?.value || "Transaction";
-            const amount = Number(transactionAmountInput?.value || 0);
-            const category = transactionCategoryInput?.value || "Other";
-            const date = transactionDateInput?.value || new Date().toISOString().split('T')[0];
+    transactionForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-            const data = { user_id: user.id, title, amount, category, date, type: transactionType };
+        if (!user || !user.id) return;
+
+        const title =
+            transactionNameInput?.value.trim() || "Transaction";
+
+        const amount =
+            Number(transactionAmountInput?.value || 0);
+
+        const category =
+            transactionCategoryInput?.value || "Other";
+
+        const date =
+            transactionDateInput?.value ||
+            new Date().toISOString().split("T")[0];
+
+        if (!amount || amount <= 0) {
+            alert("Enter a valid amount.");
+            return;
+        }
+
+        const data = {
+            user_id: user.id,
+            title,
+            amount,
+            category,
+            date,
+            type: transactionType
+        };
+
+        try {
+            const response = await fetch(
+                "https://fintack.onrender.com/api/transactions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to post transaction");
+            }
+
+            const result = await response.json();
+
+            /* =============================================
+                    CREATE TRANSACTION NOTIFICATION
+            ============================================= */
 
             try {
-                const response = await fetch("https://fintack.onrender.com/api/transactions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
+                NotificationManager.create(user.id, {
+                     type:
+                        transactionType === "income"
+                            ? "income"
+                            : "expense",
+
+                    title:
+                        transactionType === "income"
+                            ? "Income Added"
+                            : "Expense Added",
+
+                    message:
+                        transactionType === "income"
+                            ? `₹${amount.toLocaleString("en-IN")} income added for ${title}`
+                            : `₹${amount.toLocaleString("en-IN")} spent on ${title}`,
+
+                    icon:
+                        transactionType === "income"
+                            ? "fa-solid fa-arrow-trend-up"
+                            : "fa-solid fa-receipt",
+
+                    data: {
+                        transactionId:
+                            result?.transaction?.id ||
+                            result?.id ||
+                            null,
+
+                        amount,
+                        title,
+                        category,
+                        date,
+                        type: transactionType
+                    }
                 });
 
-                if (!response.ok) throw new Error("Failed to post transaction");
+                console.log(
+                    "[FinTack] + Transaction Notification Created"
+                );
 
-                closeModal({ el: transactionModal, form: transactionForm });
-                await syncDataAndUpdateUI();
-            } catch (err) {
-                console.error("[FinTack] Transaction Submission Error:", err);
-                alert("Failed to save transaction.");
+            } catch (notificationError) {
+
+                console.error(
+                    "[FinTack] Notification creation failed:",
+                    notificationError
+                );
             }
-        });
-    }
+
+            closeModal({
+                el: transactionModal,
+                form: transactionForm
+            });
+
+            await syncDataAndUpdateUI();
+
+        } catch (err) {
+
+            console.error(
+                "[FinTack] Transaction Submission Error:",
+                err
+            );
+
+            alert("Failed to save transaction.");
+        }
+    });
+}
 
     if (addGoalBtn && goalModal) {
         addGoalBtn.addEventListener("click", () => {

@@ -91,8 +91,19 @@
         <div class="header-center">
             <h1 class="logo">FINTACK</h1>
         </div>
-        <div class="header-right">
+        <div
+            class="header-right notification-bell-button"
+            id="notificationButton"
+            role="button"
+            tabindex="0"
+            aria-label="Open notifications"
+        >
             <i class="fa-regular fa-bell"></i>
+
+            <span
+                class="notification-badge hidden"
+                id="notificationBadge"
+            ></span>
         </div>
     </header>
 
@@ -691,10 +702,92 @@
     </div>
 </div>
 
+<!-- =========================================================
+                    NOTIFICATION OVERLAY
+========================================================== -->
+
+<div
+    id="notificationOverlay"
+    class="notification-overlay hidden"
+>
+
+    <div
+        class="notification-modal"
+        id="notificationModal"
+    >
+
+        <!-- ================= HEADER ================= -->
+        <div class="notification-modal-header">
+            <div class="notification-header-left">
+                <div class="notification-header-icon">
+                    <i class="fa-regular fa-bell"></i>
+                </div>
+                <div>
+                    <h2>Notifications</h2>
+                    <p>Your financial updates</p>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="notification-close"
+                id="notificationClose"
+                aria-label="Close notifications">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+
+        <!-- ================= TOOLBAR ================= -->
+
+        <div class="notification-toolbar">
+
+            <div class="notification-toolbar-title">
+                Recent
+            </div>
+            <button
+                type="button"
+                class="notification-mark-all"
+                id="notificationMarkAll">
+                Mark all as read
+            </button>
+        </div>
+
+
+        <!-- ================= LIST ================= -->
+
+        <div
+            class="notification-list"
+            id="notificationList">
+            <!-- NotificationUI.js renders here -->
+
+            <div class="notification-empty">
+                <div class="notification-empty-icon">
+                    <i class="fa-regular fa-bell"></i>
+                </div>
+                <h3>No notifications</h3>
+                <p>
+                    Your financial updates will appear here.
+                </p>
+            </div>
+        </div>
+
+
+        <!-- ================= FOOTER ================= -->
+
+        <div class="notification-footer">
+            <button
+                type="button"
+                id="notificationClearAll"
+                class="notification-clear-all">
+                <i class="fa-regular fa-trash-can"></i>
+                Clear notifications
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-
-
 <script type="module" src="js/core/app.js"></script>
 
 </body>

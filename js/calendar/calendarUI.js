@@ -13,6 +13,7 @@
    - Closes using X button
    - Closes using Escape key
 ========================================================================== */
+import NotificationManager from "../notification/notificationManager.js";
 
 class CalendarUI {
     constructor(calendarEngine) {
@@ -20,6 +21,7 @@ class CalendarUI {
         this.overlay = null;
         this.modal = null;
         this.isOpen = false;
+        this.state = null; // Initialized state to prevent undefined reference issues
         this.boundEscapeHandler = this.handleEscape.bind(this);
         this.entryType = "expense";
     }
@@ -56,7 +58,7 @@ class CalendarUI {
                     <div>
                         <div class="calendar-title">Calendar</div>
                         <div class="calendar-subtitle">Daily financial activity</div>
-                    </div>
+                    </div>  
                 </div>
 
                 <button class="calendar-close-btn" id="calendar-close-btn" type="button" aria-label="Close calendar">
@@ -382,6 +384,27 @@ class CalendarUI {
             });
             const result = await response.json().catch(() => ({}));
             if (!response.ok || result?.success === false) throw new Error(result?.message || result?.error || "Failed to save transaction.");
+
+            // ======================================================
+            // CREATE TRANSACTION NOTIFICATION
+            // ======================================================
+
+            NotificationManager.create(user.id, {
+                type: this.entryType,
+                title: this.entryType === "income" ? "Income Added" : "Expense Added",
+                message: this.entryType === "income"
+                        ? `₹${amount.toLocaleString("en-IN")} received from ${title}`
+                        : `₹${amount.toLocaleString("en-IN")} spent on ${title}`,
+                icon: this.entryType === "income" ? "fa-solid fa-wallet" : "fa-solid fa-receipt",
+                data: {
+                    transactionId: result?.transaction?.id || result?.id || null,
+                    amount,
+                    title,
+                    category,
+                    date,
+                    type: this.entryType
+                }
+            });
 
             this.hideEntryForm();
             if (typeof this.calendar.refresh === "function") await this.calendar.refresh();
