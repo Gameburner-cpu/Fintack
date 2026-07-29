@@ -1198,6 +1198,63 @@ const fintackCalendarMoneyStyle = document.createElement("style");
 
 fintackCalendarMoneyStyle.textContent = `
 
+/* ==========================================================
+   COMPACT CALENDAR FOR PHONE SCREENS
+========================================================== */
+
+@media (max-width: 600px) {
+
+    /* Main calendar window */
+    .calendar-modal {
+        width: calc(100% - 40px) !important;
+        max-width: 350px !important;
+        max-height: 82vh !important;
+        padding: 14px !important;
+        border-radius: 20px !important;
+    }
+
+    /* Reduce header spacing */
+    .calendar-header {
+        margin-bottom: 10px !important;
+    }
+
+    /* Month navigation */
+    .calendar-month-navigation {
+        margin: 8px 0 !important;
+    }
+
+    /* Income / Expense / Balance box */
+    .calendar-summary {
+        margin-bottom: 10px !important;
+        padding: 10px !important;
+    }
+
+    /* Calendar grid */
+    .calendar-grid {
+        gap: 2px !important;
+    }
+
+    /* Individual date */
+    .calendar-day {
+        min-height: 43px !important;
+        padding: 4px 2px !important;
+    }
+
+    /* Transaction amount under date */
+    .day-income,
+    .day-expense {
+        font-size: 9px !important;
+        margin-top: 3px !important;
+    }
+
+    /* Selected day section at bottom */
+    .calendar-selected-day {
+        margin-top: 10px !important;
+        padding: 12px !important;
+    }
+
+}
+
     /* Top Income / Expense / Balance values */
 
     .summary-value,
