@@ -1,6 +1,19 @@
 const express = require("express");
 const router = express.Router();
 
+/* =====================================================
+                    TEST NEWS ROUTE
+===================================================== */
+
+router.get("/test", (req, res) => {
+    res.json({
+        success: true,
+        message: "FinTack News API route is working."
+    });
+});
+
+module.exports = router;
+
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 
 /* =====================================================
