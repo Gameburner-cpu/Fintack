@@ -48,9 +48,81 @@
             scroll-behavior: smooth;
             padding-bottom: 15px; /* Adds breathing room at the bottom */
         }
+
+
+        /* --- FINTACK STARTUP LOADER --- */
+        #fintack-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0d1117;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity .35s ease, visibility .35s ease;
+        }
+        #fintack-loader.loader-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .fintack-loader-content {
+            width: min(320px, 82vw);
+            text-align: center;
+        }
+        .fintack-loader-logo {
+            margin: 0;
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            color: #f8fafc;
+        }
+        .fintack-loader-tagline {
+            margin: 7px 0 24px;
+            color: #7b8798;
+            font-size: 12px;
+            letter-spacing: .7px;
+        }
+        .fintack-loader-spinner {
+            width: 38px;
+            height: 38px;
+            margin: 0 auto 16px;
+            border: 3px solid rgba(79, 157, 255, .18);
+            border-top-color: #4F9DFF;
+            border-radius: 50%;
+            animation: fintackLoaderSpin .75s linear infinite;
+        }
+        .fintack-loader-text {
+            margin: 0;
+            color: #9aa7b8;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        @keyframes fintackLoaderSpin {
+            to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .fintack-loader-spinner { animation-duration: 1.5s; }
+            #fintack-loader { transition: none; }
+        }
     </style>
 </head>
 <body>
+
+<!-- ==========================================
+                STARTUP LOADER
+=========================================== -->
+<div id="fintack-loader" role="status" aria-live="polite" aria-label="FinTack is loading">
+    <div class="fintack-loader-content">
+        <h1 class="fintack-loader-logo">FINTACK</h1>
+        <p class="fintack-loader-tagline">Financial Intelligence</p>
+        <div class="fintack-loader-spinner" aria-hidden="true"></div>
+        <p class="fintack-loader-text">Loading FinTack...</p>
+    </div>
+</div>
+
 
 <div class="app-container">
 
@@ -797,6 +869,39 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module" src="js/core/app.js"></script>
+
+
+<script>
+(function () {
+    const loader = document.getElementById("fintack-loader");
+    const startedAt = performance.now();
+    const minimumVisibleTime = 700;
+    const maximumVisibleTime = 10000;
+    let hidden = false;
+
+    function hideFinTackLoader() {
+        if (!loader || hidden) return;
+        hidden = true;
+
+        const elapsed = performance.now() - startedAt;
+        const remaining = Math.max(0, minimumVisibleTime - elapsed);
+
+        window.setTimeout(() => {
+            loader.classList.add("loader-hidden");
+            window.setTimeout(() => loader.remove(), 400);
+        }, remaining);
+    }
+
+    if (document.readyState === "complete") {
+        hideFinTackLoader();
+    } else {
+        window.addEventListener("load", hideFinTackLoader, { once: true });
+    }
+
+    // Safety fallback: never leave the user trapped behind the loader.
+    window.setTimeout(hideFinTackLoader, maximumVisibleTime);
+})();
+</script>
 
 </body>
 </html>
