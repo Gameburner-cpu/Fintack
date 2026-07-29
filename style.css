@@ -596,12 +596,16 @@ body {
 
 .fab-menu {
   position: absolute;
-  bottom: 80px;
+  bottom: 82px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
-  gap: 18px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  /* More distance between Income and Expense */
+  gap: 55px;
+  width: max-content;
   pointer-events: none;
 }
 
@@ -650,13 +654,16 @@ body {
   bottom: 60px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--card-bg);
+  background: #161b22;
+  color: #58a6ff;
   padding: 6px 10px;
   border-radius: 8px;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
   opacity: 0;
   transition: 0.3s;
+  pointer-events: none;
 }
 
 #fab-container.menu-open .fab-label {
