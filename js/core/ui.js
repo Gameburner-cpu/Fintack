@@ -500,10 +500,7 @@ function renderGoalOptimizationResult(content, result) {
             <div class="optimization-empty">
                 <i class="fa-solid fa-circle-info"></i>
                 <h3>No active goals to optimize</h3>
-                <p>
-                    Create an active financial goal with a valid target
-                    amount and future deadline first.
-                </p>
+                <p>Create an active financial goal with a valid target amount and a future deadline first.</p>
             </div>
         `;
         return;
@@ -511,116 +508,117 @@ function renderGoalOptimizationResult(content, result) {
 
     const goalRows = result.optimizedGoals.map(item => {
         const deadline = item.goal.deadline
-            ? new Date(item.goal.deadline).toLocaleDateString()
+            ? new Date(item.goal.deadline).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            })
             : "No deadline";
 
         const allocationChanged =
-            Math.round(item.recommendedMonthly) !==
-            Math.round(item.requiredMonthly);
+            Math.round(item.recommendedMonthly) !== Math.round(item.requiredMonthly);
 
         return `
             <div class="optimization-goal-item">
                 <div class="optimization-goal-top">
                     <div>
                         <strong>${item.goal.title}</strong>
-                        <span>Deadline: ${deadline}</span>
+                        <span>Target deadline: ${deadline}</span>
                     </div>
-
                     <strong class="optimization-goal-required">
                         ${formatINR(item.requiredMonthly)}/month
                     </strong>
                 </div>
 
-                ${
-                    allocationChanged
-                        ? `
-                            <div class="optimization-goal-allocation">
-                                <span>Suggested allocation</span>
-                                <strong>
-                                    ${formatINR(item.recommendedMonthly)}/month
-                                </strong>
-                            </div>
-                        `
-                        : ""
-                }
+                ${allocationChanged ? `
+                    <div class="optimization-goal-allocation">
+                        <span>Recommended contribution</span>
+                        <strong>${formatINR(item.recommendedMonthly)}/month</strong>
+                    </div>
+                ` : ""}
             </div>
         `;
     }).join("");
 
-    let capacityBlock = "";
-
-    if (result.availableMonthly !== null) {
-        capacityBlock = `
-            <div class="optimization-capacity-grid">
-                <div class="optimization-stat">
-                    <span>Available / month</span>
-                    <strong>
-                        ${formatINR(result.availableMonthly)}
-                    </strong>
-                </div>
-
-                <div class="optimization-stat">
-                    <span>
-                        ${result.affordable ? "Remaining" : "Shortfall"}
-                    </span>
-                    <strong>
-                        ${
-                            result.affordable
-                                ? formatINR(
-                                    Math.max(
-                                        result.availableMonthly -
-                                        result.totalMonthly,
-                                        0
-                                    )
-                                )
-                                : formatINR(result.shortfall)
-                        }
-                    </strong>
-                </div>
-            </div>
-        `;
-    }
-
+    let overviewText = "";
     let statusBlock = "";
 
-    if (result.affordable === true) {
-        statusBlock = `
-            <div class="optimization-status success">
-                <i class="fa-solid fa-circle-check"></i>
-                <div>
-                    <strong>Your current plan is achievable.</strong>
-                    <span>
-                        Your available monthly savings can cover the
-                        required contributions for these deadlines.
-                    </span>
-                </div>
+    if (result.availableMonthly !== null) {
+        const remaining = Math.max(
+            result.availableMonthly - result.totalMonthly,
+            0
+        );
+
+        overviewText = `
+            <div class="optimization-overview-text">
+                <h3>Your Savings Overview</h3>
+                <p> <br>
+                    You currently have
+                    <strong>${result.plans.length} active goal${result.plans.length > 1 ? "s" : ""}</strong>,
+                    requiring a total contribution of
+                    <strong>${formatINR(result.totalMonthly)} per month</strong>.
+                 </br></p>
+                <p>
+                    Your current financial activity leaves
+                    <strong>${formatINR(result.availableMonthly)} available for monthly savings</strong>.
+                    ${result.affordable
+                        ? `After funding ${result.plans.length > 1 ? "these goals" : "this goal"}, you would have approximately <strong>${formatINR(remaining)}</strong> remaining each month.`
+                        : `This is currently <strong>${formatINR(result.shortfall)}</strong> below the amount required to meet ${result.plans.length > 1 ? "all deadlines" : "the deadline"}.`
+                    }
+                </p>
             </div>
         `;
-    } else if (result.affordable === false) {
-        statusBlock = `
-            <div class="optimization-status warning">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <div>
-                    <strong>Your current deadlines need adjustment.</strong>
-                    <span>
-                        You need ${formatINR(result.shortfall)} more per
-                        month to fully meet all current deadlines.
-                        FinTack has distributed your available savings
-                        proportionally below.
-                    </span>
+
+        if (result.affordable) {
+            statusBlock = `
+                <div class="optimization-status success">
+                    <br><i class="fa-solid fa-circle-check"><strong>Your current plan is achievable.</strong></i></br>
+                    <div>
+                        
+                        <span><br>
+                            Based on your current financial capacity, you can meet the required
+                            ${result.plans.length > 1 ? "contributions" : "contribution"} within the existing
+                            ${result.plans.length > 1 ? "deadlines" : "deadline"}.
+                        </br></span>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            statusBlock = `
+                <div class="optimization-status warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Your current plan needs adjustment.</strong>
+                        <span>
+                            You need an additional ${formatINR(result.shortfall)} per month to meet
+                            ${result.plans.length > 1 ? "all current deadlines" : "the current deadline"}.
+                            FinTack has therefore calculated a suggested allocation based on your available savings.
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
     } else {
+        overviewText = `
+            <div class="optimization-overview-text">
+                <h3>Your Savings Overview</h3>
+                <p>
+                    You currently have
+                    <strong>${result.plans.length} active goal${result.plans.length > 1 ? "s" : ""}</strong>,
+                    requiring a total contribution of
+                    <strong>${formatINR(result.totalMonthly)} per month</strong>.
+                </p>
+            </div>
+        `;
+
         statusBlock = `
             <div class="optimization-status">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                 <div>
-                    <strong>Deadline savings plan calculated.</strong>
+                    <strong>Your deadline-based savings plan is ready.</strong>
                     <span>
-                        Financial capacity data is not available yet,
-                        so the plan below shows the amount required to
-                        meet each deadline.
+                        Financial capacity data is currently unavailable, so this plan shows the
+                        contribution required to meet ${result.plans.length > 1 ? "your deadlines" : "your deadline"}.
                     </span>
                 </div>
             </div>
@@ -629,52 +627,45 @@ function renderGoalOptimizationResult(content, result) {
 
     content.innerHTML = `
         <div class="optimization-result">
-
-            <div class="optimization-summary">
-                <div>
-                    <span>Active Goals</span>
-                    <strong>${result.plans.length}</strong>
-                </div>
-
-                <div>
-                    <span>Total Required / month</span>
-                    <strong>${formatINR(result.totalMonthly)}</strong>
-                </div>
-            </div>
-
-            ${capacityBlock}
-
+            ${overviewText}
             ${statusBlock}
 
             <div class="optimization-section-title">
-                Goal Allocation
+                ${result.plans.length > 1 ? "Goal Contributions" : "Goal Contribution"}
             </div>
 
             <div class="optimization-goals-list">
                 ${goalRows}
             </div>
 
+            <div class="optimization-section-title">
+                Savings Schedule
+            </div>
+
             <div class="optimization-frequency">
                 <div>
-                    <span>Daily target</span>
+                    <span>Daily</span>
                     <strong>${formatINR(result.totalDaily)}</strong>
                 </div>
-
                 <div>
-                    <span>Weekly target</span>
+                    <span>Weekly</span>
                     <strong>${formatINR(result.totalWeekly)}</strong>
                 </div>
-
                 <div>
-                    <span>Monthly target</span>
+                    <span>Monthly</span>
                     <strong>${formatINR(result.totalMonthly)}</strong>
                 </div>
             </div>
 
+            <p class="optimization-frequency-note">
+                To stay on schedule, aim to save
+                <strong>${formatINR(result.totalDaily)} per day</strong>,
+                <strong>${formatINR(result.totalWeekly)} per week</strong>,
+                or <strong>${formatINR(result.totalMonthly)} per month</strong>.
+            </p>
         </div>
     `;
 }
-
 function openGoalOptimizationPlan() {
     console.log("🧠 Opening FinTack Smart Goal Plan");
 
