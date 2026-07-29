@@ -1,7 +1,8 @@
 /* ==========================================================================
    tripIntent.js
-   Trip Intent Detector
+   Smart Trip Intent Detector
 ========================================================================== */
+
 
 class TripIntent {
 
@@ -12,46 +13,44 @@ class TripIntent {
             .trim();
 
         /* =====================================================
-                        CREATE TRIP
-        ===================================================== */
+                CREATE TRIP
+===================================================== */
 
-        const createTripPatterns = [
+if (
 
-            /^create\s+(a\s+)?trip/,
-            /^start\s+(a\s+)?trip/,
-            /^new\s+trip/,
-            /^plan\s+(a\s+)?trip/,
-            /^planning\s+(a\s+)?trip/,
-            /trip\s+called/,
-            /trip\s+to/,
-            /going\s+to/,
-            /travel\s+to/,
-            /vacation\s+to/,
-            /holiday\s+to/
+    /^create\s+/i.test(text) ||
 
-        ];
+    /^start\s+/i.test(text) ||
 
-        if (
+    /^new\s+trip/i.test(text) ||
 
-            createTripPatterns.some(
+    /^plan\s+/i.test(text) ||
 
-                pattern => pattern.test(text)
+    /^planning\s+/i.test(text) ||
 
-            )
+    /^trip\s+to/i.test(text) ||
 
-        ) {
+    /^go\s+to/i.test(text) ||
 
-            return {
+    /^let'?s\s+go\s+to/i.test(text) ||
 
-                module: "trip",
+    text.includes(" trip")
 
-                action: "CREATE_TRIP",
+) {
 
-                confidence: 100
+    console.log("CREATE_TRIP matched:", text);
 
-            };
+    return {
 
-        }
+        module: "trip",
+
+        action: "CREATE_TRIP",
+
+        confidence: 100
+
+    };
+
+}
 
         /* =====================================================
                         ADD MEMBERS
@@ -63,7 +62,13 @@ class TripIntent {
 
             text.startsWith("include ") ||
 
-            text.startsWith("invite ")
+            text.startsWith("invite ") ||
+
+            text.startsWith("bring ") ||
+
+            text.includes(" is joining") ||
+
+            text.includes(" joined")
 
         ) {
 
@@ -80,12 +85,74 @@ class TripIntent {
         }
 
         /* =====================================================
+                        EDIT EXPENSE
+        ===================================================== */
+
+        if (
+
+            /^change\s+/i.test(text) ||
+
+            /^update\s+/i.test(text) ||
+
+            /^modify\s+/i.test(text) ||
+
+            text.includes(" should be ") ||
+
+            text.includes(" actually ")
+
+        ) {
+
+            return {
+
+                module: "trip",
+
+                action: "EDIT_EXPENSE",
+
+                confidence: 95
+
+            };
+
+        }
+
+        /* =====================================================
+                        DELETE EXPENSE
+        ===================================================== */
+
+        if (
+
+            /^delete\s+/i.test(text) ||
+
+            /^remove\s+/i.test(text) ||
+
+            /^erase\s+/i.test(text)
+
+        ) {
+
+            return {
+
+                module: "trip",
+
+                action: "DELETE_EXPENSE",
+
+                confidence: 95
+
+            };
+
+        }
+
+        /* =====================================================
                         ADD EXPENSE
         ===================================================== */
 
         if (
 
-            /(paid|spent|gave)\b/.test(text)
+            /(paid|spent|gave|invested|bought)/i.test(text) ||
+
+            /^[a-zA-Z ]+\s+(₹|rs\.?)?\s*\d/i.test(text) ||
+
+            /^spent\s+(₹|rs\.?)?\s*\d/i.test(text) ||
+
+            /^paid\s+(₹|rs\.?)?\s*\d/i.test(text)
 
         ) {
 
@@ -102,7 +169,7 @@ class TripIntent {
         }
 
         /* =====================================================
-                        SUMMARY
+                        SHOW SUMMARY
         ===================================================== */
 
         if (
@@ -111,7 +178,15 @@ class TripIntent {
 
             text.includes("show summary") ||
 
-            text.includes("trip summary")
+            text.includes("trip summary") ||
+
+            text.includes("trip details") ||
+
+            text.includes("show trip") ||
+
+            text.includes("how much spent") ||
+
+            text.includes("total expense")
 
         ) {
 
@@ -128,7 +203,7 @@ class TripIntent {
         }
 
         /* =====================================================
-                        SETTLEMENT
+                        SHOW SETTLEMENTS
         ===================================================== */
 
         if (
@@ -137,7 +212,27 @@ class TripIntent {
 
             text.includes("settlement") ||
 
-            text.includes("settle")
+            text.includes("settle") ||
+
+            text.includes("split") ||
+
+            text.includes("split bill") ||
+
+            text.includes("split expenses") ||
+
+            text.includes("split cost") ||
+
+            text.includes("split costs") ||
+
+            text.includes("balance trip") ||
+
+            text.includes("balance expenses") ||
+
+            text.includes("calculate split") ||
+
+            text.includes("calculate settlement") ||
+
+            text.includes("who should pay")
 
         ) {
 
@@ -147,7 +242,7 @@ class TripIntent {
 
                 action: "SHOW_SETTLEMENTS",
 
-                confidence: 90
+                confidence: 95
 
             };
 

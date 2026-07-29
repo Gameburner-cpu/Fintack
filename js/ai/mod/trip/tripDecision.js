@@ -1,6 +1,6 @@
 /* ==========================================================================
    tripDecision.js
-   Converts trip intents into executable actions.
+   Smart Decision Engine for Trip Module
 ========================================================================== */
 
 class TripDecision {
@@ -11,20 +11,16 @@ class TripDecision {
 
         const context = aiRequest.context || {};
 
+        const hasActiveTrip = !!context.hasActiveTrip;
+
         console.log("========== TripDecision ==========");
-        console.log("Received Intents:", aiRequest.intents);
         console.log("Context:", context);
+        console.log("Intents:", aiRequest.intents);
 
         for (const intent of aiRequest.intents) {
 
-            console.log("Processing Intent:", intent);
-
-            if (intent.module !== "trip") {
-                console.log("Skipped (Not Trip Module)");
+            if (intent.module !== "trip")
                 continue;
-            }
-
-            console.log("Intent Action:", intent.action);
 
             switch (intent.action) {
 
@@ -34,12 +30,14 @@ class TripDecision {
 
                 case "CREATE_TRIP":
 
-                    console.log("Matched CREATE_TRIP");
-
                     actions.push({
+
                         module: "trip",
+
                         action: "CREATE_TRIP",
+
                         priority: 1
+
                     });
 
                     break;
@@ -50,17 +48,30 @@ class TripDecision {
 
                 case "ADD_MEMBERS":
 
-                    if (!context.hasActiveTrip) {
-                        console.log("Skipped ADD_MEMBERS (No Active Trip)");
+                    if (!hasActiveTrip) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "NO_ACTIVE_TRIP",
+
+                            priority: 0
+
+                        });
+
                         break;
+
                     }
 
-                    console.log("Matched ADD_MEMBERS");
-
                     actions.push({
+
                         module: "trip",
+
                         action: "ADD_MEMBERS",
+
                         priority: 1
+
                     });
 
                     break;
@@ -71,17 +82,146 @@ class TripDecision {
 
                 case "ADD_EXPENSE":
 
-                    if (!context.hasActiveTrip) {
-                        console.log("Skipped ADD_EXPENSE (No Active Trip)");
+                    if (!hasActiveTrip) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "NO_ACTIVE_TRIP",
+
+                            priority: 0
+
+                        });
+
                         break;
+
                     }
 
-                    console.log("Matched ADD_EXPENSE");
+                    if (!aiRequest.entities.expense) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "INVALID_EXPENSE",
+
+                            priority: 0
+
+                        });
+
+                        break;
+
+                    }
 
                     actions.push({
+
                         module: "trip",
+
                         action: "ADD_EXPENSE",
+
                         priority: 1
+
+                    });
+
+                    break;
+
+                /* ======================================================
+                                EDIT EXPENSE
+                ====================================================== */
+
+                case "EDIT_EXPENSE":
+
+                    if (!hasActiveTrip) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "NO_ACTIVE_TRIP",
+
+                            priority: 0
+
+                        });
+
+                        break;
+
+                    }
+
+                    if (!aiRequest.entities.editExpense) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "INVALID_EDIT",
+
+                            priority: 0
+
+                        });
+
+                        break;
+
+                    }
+
+                    actions.push({
+
+                        module: "trip",
+
+                        action: "EDIT_EXPENSE",
+
+                        priority: 1
+
+                    });
+
+                    break;
+
+                /* ======================================================
+                                DELETE EXPENSE
+                ====================================================== */
+
+                case "DELETE_EXPENSE":
+
+                    if (!hasActiveTrip) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "NO_ACTIVE_TRIP",
+
+                            priority: 0
+
+                        });
+
+                        break;
+
+                    }
+
+                    if (!aiRequest.entities.deleteExpense) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "INVALID_DELETE",
+
+                            priority: 0
+
+                        });
+
+                        break;
+
+                    }
+
+                    actions.push({
+
+                        module: "trip",
+
+                        action: "DELETE_EXPENSE",
+
+                        priority: 1
+
                     });
 
                     break;
@@ -92,17 +232,30 @@ class TripDecision {
 
                 case "SHOW_SUMMARY":
 
-                    if (!context.hasActiveTrip) {
-                        console.log("Skipped SHOW_SUMMARY (No Active Trip)");
+                    if (!hasActiveTrip) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "NO_ACTIVE_TRIP",
+
+                            priority: 0
+
+                        });
+
                         break;
+
                     }
 
-                    console.log("Matched SHOW_SUMMARY");
-
                     actions.push({
+
                         module: "trip",
+
                         action: "SHOW_SUMMARY",
+
                         priority: 2
+
                     });
 
                     break;
@@ -113,28 +266,53 @@ class TripDecision {
 
                 case "SHOW_SETTLEMENTS":
 
-                    if (!context.hasActiveTrip) {
-                        console.log("Skipped SHOW_SETTLEMENTS (No Active Trip)");
+                    if (!hasActiveTrip) {
+
+                        actions.push({
+
+                            module: "trip",
+
+                            action: "NO_ACTIVE_TRIP",
+
+                            priority: 0
+
+                        });
+
                         break;
+
                     }
 
-                    console.log("Matched SHOW_SETTLEMENTS");
-
                     actions.push({
+
                         module: "trip",
+
                         action: "SHOW_SETTLEMENTS",
+
                         priority: 2
+
                     });
 
                     break;
 
                 default:
 
-                    console.warn("Unknown Action:", intent.action);
+                    console.warn(
+
+                        "Unknown Trip Action:",
+
+                        intent.action
+
+                    );
 
             }
 
         }
+
+        actions.sort(
+
+            (a, b) => a.priority - b.priority
+
+        );
 
         console.log("Generated Actions:", actions);
         console.log("=================================");

@@ -120,13 +120,27 @@ router.post("/chats/:id/messages", async (req, res) => {
             ])
             .select()
             .single();
-        if (error) throw error;
-        await supabase
-            .from("ai_chats")
-            .update({
-                updated_at: new Date()
-            })
-            .eq("id", chatId);
+        if (error) {
+
+    console.error("Insert Error:", error);
+
+    throw error;
+
+}
+        const { error: updateError } = await supabase
+    .from("ai_chats")
+    .update({
+        updated_at: new Date().toISOString()
+    })
+    .eq("id", chatId);
+
+if (updateError) {
+
+    console.error("Update Error:", updateError);
+
+    throw updateError;
+
+}
         res.json({
             success: true,
             message: data

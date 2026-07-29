@@ -241,61 +241,6 @@ router.delete("/:id", async (req, res) => {
 
 });
 
-/* ==========================================================
-                    ADD MEMBER
-========================================================== */
-
-router.post("/:id/members", async (req, res) => {
-
-    try {
-
-        const tripId = req.params.id;
-        const { member } = req.body;
-
-        const { data, error } = await supabase
-
-            .from("trip_members")
-
-            .insert([
-
-                {
-                    trip_id: tripId,
-                    member_name: member
-                }
-
-            ])
-
-            .select()
-
-            .single();
-
-        if (error) throw error;
-
-        res.json({
-
-            success: true,
-
-            member: data
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-});
 
 /* ==========================================================
                     ADD EXPENSE
@@ -343,6 +288,180 @@ router.post("/:id/expenses", async (req, res) => {
             success: true,
 
             expense: data
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
+});
+
+/* ==========================================================
+                UPDATE EXPENSE
+========================================================== */
+
+router.patch("/:tripId/expenses/:expenseId", async (req, res) => {
+
+    try {
+
+        const { expenseId } = req.params;
+
+        const {
+
+            title,
+
+            amount,
+
+            paid_by,
+
+            category,
+
+            notes
+
+        } = req.body;
+
+        const { data, error } = await supabase
+
+            .from("trip_expenses")
+
+            .update({
+
+                title,
+
+                amount,
+
+                paid_by,
+
+                category,
+
+                notes
+
+            })
+
+            .eq("id", expenseId)
+
+            .select()
+
+            .single();
+
+        if (error) throw error;
+
+        res.json({
+
+            success: true,
+
+            expense: data
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
+});
+
+/* ==========================================================
+                DELETE EXPENSE
+========================================================== */
+
+router.delete("/:tripId/expenses/:expenseId", async (req, res) => {
+
+    try {
+
+        const { expenseId } = req.params;
+
+        const { error } = await supabase
+
+            .from("trip_expenses")
+
+            .delete()
+
+            .eq("id", expenseId);
+
+        if (error) throw error;
+
+        res.json({
+
+            success: true,
+
+            message: "Expense deleted successfully."
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
+});
+
+/* ==========================================================
+                GET ALL EXPENSES
+========================================================== */
+
+router.get("/:tripId/expenses", async (req, res) => {
+
+    try {
+
+        const { tripId } = req.params;
+
+        const { data, error } = await supabase
+
+            .from("trip_expenses")
+
+            .select("*")
+
+            .eq("trip_id", tripId)
+
+            .order("created_at", {
+
+                ascending: true
+
+            });
+
+        if (error) throw error;
+
+        res.json({
+
+            success: true,
+
+            expenses: data
 
         });
 

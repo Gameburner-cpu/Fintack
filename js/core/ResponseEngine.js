@@ -11,6 +11,10 @@ class ResponseEngine {
 
     }
 
+    /* ==========================================================
+                        REGISTER FORMATTER
+    ========================================================== */
+
     register(moduleName, formatter) {
 
         this.formatters.set(
@@ -23,11 +27,22 @@ class ResponseEngine {
 
     }
 
+    /* ==========================================================
+                        GENERATE RESPONSE
+    ========================================================== */
+
     async generate(aiRequest) {
 
         const responses = [];
 
-        for (const execution of aiRequest.results) {
+        const results =
+
+            aiRequest.results || [];
+
+        for (const execution of results) {
+
+            if (!execution)
+                continue;
 
             const {
 
@@ -37,30 +52,122 @@ class ResponseEngine {
 
             } = execution;
 
-            const formatter =
-                this.formatters.get(action.module);
-
-            if (!formatter)
+            if (!action)
                 continue;
 
-            const formatted =
-                await formatter.format(
+            const formatter =
 
-                    result,
+                this.formatters.get(
 
-                    action,
-
-                    aiRequest
+                    action.module
 
                 );
 
-            /* ==========================================================
-                            NORMALIZE RESPONSE
-            ========================================================== */
+            /* ===============================================
+                        NO FORMATTER
+            =============================================== */
 
-            if (typeof formatted === "string") {
+            if (!formatter) {
+
+                console.warn(
+
+                    `No formatter registered for module: ${action.module}`
+
+                );
 
                 responses.push({
+
+                    module: action.module,
+
+                    action: action.action,
+
+                    success: false,
+
+                    message:
+
+                        result?.message ||
+
+                        "No formatter available.",
+
+                    html: ""
+
+                });
+
+                continue;
+
+            }
+
+            let formatted;
+
+            try {
+
+                formatted =
+
+                    await formatter.format(
+
+                        result,
+
+                        action,
+
+                        aiRequest
+
+                    );
+
+            }
+
+            catch (error) {
+
+                console.error(
+
+                    "Formatter Error:",
+
+                    error
+
+                );
+
+                responses.push({
+
+                    module: action.module,
+
+                    action: action.action,
+
+                    success: false,
+
+                    message:
+
+                        "Unable to build response.",
+
+                    html: ""
+
+                });
+
+                continue;
+
+            }
+
+            /* ===============================================
+                        STRING RESPONSE
+            =============================================== */
+
+            if (
+
+                typeof formatted ===
+
+                "string"
+
+            ) {
+
+                responses.push({
+
+                    module: action.module,
+
+                    action: action.action,
+
+                    success:
+
+                        result?.success ??
+
+                        true,
 
                     message: formatted,
 
@@ -68,25 +175,75 @@ class ResponseEngine {
 
                 });
 
-            }
-
-            else {
-
-                responses.push({
-
-                    message: formatted.message || "",
-
-                    html: formatted.html || ""
-
-                });
+                continue;
 
             }
+
+            /* ===============================================
+                        OBJECT RESPONSE
+            =============================================== */
+
+            responses.push({
+
+                module: action.module,
+
+                action: action.action,
+
+                success:
+
+                    result?.success ??
+
+                    true,
+
+                message:
+
+                    formatted?.message ||
+
+                    "",
+
+                html:
+
+                    formatted?.html ||
+
+                    ""
+
+            });
+
+        }
+
+        /* ===============================================
+                    FALLBACK RESPONSE
+        =============================================== */
+
+        if (!responses.length) {
+
+            responses.push({
+
+                module: "system",
+
+                action: "EMPTY",
+
+                success: false,
+
+                message:
+
+                    "I couldn't understand that. Could you try rephrasing?",
+
+                html: ""
+
+            });
 
         }
 
         aiRequest.response = {
 
-            success: true,
+            success:
+
+                responses.some(
+
+                    r => r.success
+
+                ),
 
             responses
 
