@@ -2012,3 +2012,77 @@ body {
 .notification-badge.hidden {
     display: none;
 }
+/* =========================================================
+   TRANSACTION CATEGORY DROPDOWN
+========================================================= */
+
+#transaction-category {
+    width: 100%;
+    height: 48px;
+
+    /* Same internal spacing as other inputs */
+    padding: 0 14px;
+
+    /* Space below category before date */
+    margin-bottom: 12px;
+
+    background: #2a344a;
+    color: #ffffff;
+
+    border: 1px solid transparent;
+    border-radius: 9px;
+
+    font-size: 14px;
+    font-family: inherit;
+
+    outline: none;
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* Hover */
+#transaction-category:hover {
+    background: #303b52;
+}
+
+
+/* Focus */
+#transaction-category:focus {
+    border-color: #6aafff;
+
+    box-shadow:
+        0 0 0 2px rgba(106, 175, 255, 0.12);
+}
+
+
+/* Dropdown options */
+#transaction-category option {
+    background: #1b2433;
+    color: #ffffff;
+}
+
+
+/* Placeholder */
+#transaction-category:invalid {
+    color: #8d96a8;
+}
+
+
+/* Mobile */
+@media (max-width: 600px) {
+
+    #transaction-category {
+        height: 48px;
+        padding: 0 14px;
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
+
+}

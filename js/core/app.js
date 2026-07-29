@@ -605,23 +605,92 @@ window.addEventListener(
         }
     });
 
+    /* ==========================================================
+        FAB TRANSACTION CATEGORY OPTIONS
+========================================================== */
+
+function populateTransactionCategories(type) {
+
+    if (!transactionCategoryInput) return;
+
+    const incomeCategories = [
+        "Salary",
+        "Freelance",
+        "Business",
+        "Investment",
+        "Bonus",
+        "Gift",
+        "Refund",
+        "Other"
+    ];
+
+    const expenseCategories = [
+        "Food",
+        "Transport",
+        "Shopping",
+        "Bills",
+        "Entertainment",
+        "Health",
+        "Education",
+        "Fuel",
+        "Travel",
+        "Rent",
+        "Other"
+    ];
+
+    const categories =
+        type === "income"
+            ? incomeCategories
+            : expenseCategories;
+
+    transactionCategoryInput.innerHTML = `
+        <option value="" disabled selected>
+            Select Category
+        </option>
+
+        ${categories
+            .map(category =>
+                `<option value="${category}">${category}</option>`
+            )
+            .join("")}
+    `;
+}
+
     if (fabIncome) {
-        fabIncome.addEventListener("click", () => {
-            transactionType = "income";
-            if (transactionTitle) transactionTitle.textContent = "Add Income";
-            if (transactionModal) transactionModal.classList.remove("hidden");
-            if (fabContainer) fabContainer.classList.remove("menu-open");
-        });
-    }
+    fabIncome.addEventListener("click", () => {
+
+        transactionType = "income";
+
+        populateTransactionCategories("income");
+
+        if (transactionTitle)
+            transactionTitle.textContent = "Add Income";
+
+        if (transactionModal)
+            transactionModal.classList.remove("hidden");
+
+        if (fabContainer)
+            fabContainer.classList.remove("menu-open");
+    });
+}
 
     if (fabExpense) {
-        fabExpense.addEventListener("click", () => {
-            transactionType = "expense";
-            if (transactionTitle) transactionTitle.textContent = "Add Expense";
-            if (transactionModal) transactionModal.classList.remove("hidden");
-            if (fabContainer) fabContainer.classList.remove("menu-open");
-        });
-    }
+    fabExpense.addEventListener("click", () => {
+
+        transactionType = "expense";
+
+        populateTransactionCategories("expense");
+
+        if (transactionTitle)
+            transactionTitle.textContent = "Add Expense";
+
+        if (transactionModal)
+            transactionModal.classList.remove("hidden");
+
+        if (fabContainer)
+            fabContainer.classList.remove("menu-open");
+    });
+}
 
     /* ==========================================================
             CALENDAR BUTTON
@@ -1094,7 +1163,20 @@ window.addEventListener(
                 form: transactionForm
             });
 
+            /*
+                Give backend a moment to finish persisting
+                the newly created transaction before refetching.
+            */
+            await new Promise(resolve => setTimeout(resolve, 300));
+
             await syncDataAndUpdateUI();
+
+            /*
+                Keep calendar data synchronized too.
+            */
+            if (user?.id) {
+                await Calendar.initialize(user.id);
+            }
 
         } catch (err) {
 
