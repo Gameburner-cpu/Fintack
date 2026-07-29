@@ -4,7 +4,63 @@
 
 const TRIP_API = "https://fintack.onrender.com/api/trips";
 
+const ACTIVE_TRIP_KEY = "fintack_active_trip_id";
+
 const TripStorage = {
+
+    /* ==========================================================
+                    ACTIVE TRIP STORAGE
+    ========================================================== */
+
+    setActiveTrip(tripId) {
+
+        if (
+            tripId === undefined ||
+            tripId === null ||
+            tripId === ""
+        ) {
+            return;
+        }
+
+        localStorage.setItem(
+            ACTIVE_TRIP_KEY,
+            String(tripId)
+        );
+
+        // Keep the existing runtime value in sync as well.
+        window.activeTripId = String(tripId);
+
+        console.log(
+            "[TripStorage] Active trip saved:",
+            tripId
+        );
+
+    },
+
+    getActiveTrip() {
+
+        const tripId =
+            localStorage.getItem(
+                ACTIVE_TRIP_KEY
+            );
+
+        return tripId || null;
+
+    },
+
+    clearActiveTrip() {
+
+        localStorage.removeItem(
+            ACTIVE_TRIP_KEY
+        );
+
+        window.activeTripId = null;
+
+        console.log(
+            "[TripStorage] Active trip cleared."
+        );
+
+    },
 
     /* ==========================================================
                         CREATE TRIP
@@ -32,7 +88,27 @@ const TripStorage = {
 
         });
 
-        return await response.json();
+        const result =
+            await response.json();
+
+        /*
+            Automatically remember a newly created trip.
+
+            This makes the active trip survive browser refreshes.
+        */
+
+        if (
+            result?.success &&
+            result?.trip?.id
+        ) {
+
+            this.setActiveTrip(
+                result.trip.id
+            );
+
+        }
+
+        return result;
 
     },
 
@@ -44,7 +120,7 @@ const TripStorage = {
 
         const response = await fetch(
 
-            `${TRIP_API}?user_id=${userId}`
+            `${TRIP_API}?user_id=${encodeURIComponent(userId)}`
 
         );
 
@@ -60,7 +136,7 @@ const TripStorage = {
 
         const response = await fetch(
 
-            `${TRIP_API}/${tripId}/details`
+            `${TRIP_API}/${encodeURIComponent(tripId)}/details`
 
         );
 
@@ -76,7 +152,7 @@ const TripStorage = {
 
         const response = await fetch(
 
-            `${TRIP_API}/${tripId}/members/bulk`,
+            `${TRIP_API}/${encodeURIComponent(tripId)}/members/bulk`,
 
             {
 
@@ -128,7 +204,7 @@ const TripStorage = {
 
         const response = await fetch(
 
-            `${TRIP_API}/${tripId}/expenses`,
+            `${TRIP_API}/${encodeURIComponent(tripId)}/expenses`,
 
             {
 
@@ -170,7 +246,7 @@ const TripStorage = {
 
         const response = await fetch(
 
-            `${TRIP_API}/${tripId}/expenses`
+            `${TRIP_API}/${encodeURIComponent(tripId)}/expenses`
 
         );
 
@@ -194,7 +270,7 @@ const TripStorage = {
 
         const response = await fetch(
 
-            `${TRIP_API}/${tripId}/expenses/${expenseId}`,
+            `${TRIP_API}/${encodeURIComponent(tripId)}/expenses/${encodeURIComponent(expenseId)}`,
 
             {
 
@@ -206,7 +282,9 @@ const TripStorage = {
 
                 },
 
-                body: JSON.stringify(updates)
+                body: JSON.stringify(
+                    updates
+                )
 
             }
 
@@ -230,7 +308,7 @@ const TripStorage = {
 
         const response = await fetch(
 
-            `${TRIP_API}/${tripId}/expenses/${expenseId}`,
+            `${TRIP_API}/${encodeURIComponent(tripId)}/expenses/${encodeURIComponent(expenseId)}`,
 
             {
 
@@ -252,7 +330,7 @@ const TripStorage = {
 
         const response = await fetch(
 
-            `${TRIP_API}/${tripId}/settlements`
+            `${TRIP_API}/${encodeURIComponent(tripId)}/settlements`
 
         );
 
