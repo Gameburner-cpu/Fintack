@@ -472,6 +472,147 @@ document.addEventListener("DOMContentLoaded", async () => {
         `).join("");
     }
 
+    /* ======================================================
+                    DAILY STOCK NEWS
+    ====================================================== */
+
+    async function loadDailyStockNews() {
+        const stockContainer = document.getElementById("stock-container");
+        if (!stockContainer) return;
+
+        stockContainer.innerHTML = `
+            <div class="placeholder-card">
+                <span class="loading-value">Loading latest stock news...</span>
+            </div>
+        `;
+
+        try {
+            const response = await fetch(
+                "https://fintack.onrender.com/api/news/daily?symbols=AAPL,MSFT,NVDA&limit=10"
+            );
+
+            if (!response.ok) {
+                throw new Error(`News request failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            const articles = Array.isArray(result?.articles)
+                ? result.articles
+                : [];
+
+            if (!result?.success || articles.length === 0) {
+                stockContainer.innerHTML = `
+                    <div class="placeholder-card">
+                        <span>No stock news available right now.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            stockContainer.innerHTML = "";
+
+            articles.forEach(article => {
+                const card = document.createElement("article");
+                card.className = "stock-news-card";
+
+                const publishedDate = article.publishedAt
+                    ? new Date(article.publishedAt).toLocaleString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    })
+                    : "";
+
+                const image = article.image
+                    ? `
+                        <img
+                            src="${escapeHTML(article.image)}"
+                            alt=""
+                            loading="lazy"
+                            referrerpolicy="no-referrer"
+                            onerror="this.style.display='none'"
+                            style="width:100%;height:140px;object-fit:cover;border-radius:10px;margin-bottom:12px;"
+                        >
+                    `
+                    : "";
+
+                card.innerHTML = `
+                    ${image}
+
+                    <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;">
+                        <span style="font-size:12px;color:var(--accent-blue);font-weight:700;">
+                            ${escapeHTML(article.symbol || article.related || "MARKET")}
+                        </span>
+
+                        <span style="font-size:11px;color:#8d97a5;">
+                            ${escapeHTML(publishedDate)}
+                        </span>
+                    </div>
+
+                    <h3 style="font-size:15px;line-height:1.4;margin-bottom:8px;">
+                        ${escapeHTML(article.headline || "Stock Market Update")}
+                    </h3>
+
+                    <p style="font-size:13px;line-height:1.5;color:#8d97a5;margin-bottom:12px;">
+                        ${escapeHTML(
+                            article.summary
+                                ? article.summary.slice(0, 180) +
+                                  (article.summary.length > 180 ? "..." : "")
+                                : `Latest market coverage from ${article.source || "Finnhub"}.`
+                        )}
+                    </p>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                        <small style="color:#8d97a5;">
+                            ${escapeHTML(article.source || "Market News")}
+                        </small>
+
+                        ${
+                            article.url
+                                ? `
+                                    <a
+                                        href="${escapeHTML(article.url)}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style="color:var(--accent-blue);font-size:13px;font-weight:700;text-decoration:none;"
+                                    >
+                                        Read More
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                `
+                                : ""
+                        }
+                    </div>
+                `;
+
+                stockContainer.appendChild(card);
+            });
+
+            console.log(
+                `[FinTack News] Loaded ${articles.length} daily stock news articles.`
+            );
+
+        } catch (error) {
+            console.error("[FinTack News] Failed to load daily stock news:", error);
+
+            stockContainer.innerHTML = `
+                <div class="placeholder-card">
+                    <span>Unable to load stock news right now.</span>
+                </div>
+            `;
+        }
+    }
+
+    function escapeHTML(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
     async function initializeDashboard(userId) {
         if (isDashboardInitialized || !userId) return;
 
@@ -503,6 +644,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             attachGoalButtonEvents();
             renderCharts(processedData.chartData, processedData);
             refreshBudget(transactions);
+
+            // Load live Daily Stock News from the deployed Finnhub backend route.
+            await loadDailyStockNews();
 
             isDashboardInitialized = true;
         } catch (err) {
