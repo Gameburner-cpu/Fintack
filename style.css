@@ -2784,3 +2784,278 @@ body {
         height: 68px !important;
     }
 }
+/* ==========================================================================
+   FINTACK AI — NEWS RESPONSE
+   ========================================================================== */
+
+.ai-news-response {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* =========================
+   NEWS HEADER
+   ========================= */
+
+.ai-news-response-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 2px;
+}
+
+.ai-news-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #f8fafc;
+    line-height: 1.25;
+}
+
+.ai-news-count {
+    flex-shrink: 0;
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    background: rgba(96, 165, 250, 0.12);
+    border: 1px solid rgba(96, 165, 250, 0.18);
+
+    color: #60a5fa;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* =========================
+   NEWS LIST
+   ========================= */
+
+.ai-news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+/* =========================
+   INDIVIDUAL NEWS CARD
+   ========================= */
+
+.ai-news-card {
+    width: 100%;
+
+    padding: 12px;
+
+    background: linear-gradient(
+        145deg,
+        #1b2432,
+        #18212e
+    );
+
+    border: 1px solid rgba(148, 163, 184, 0.12);
+
+    border-radius: 14px;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    transition:
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+
+.ai-news-card:hover {
+    border-color: rgba(96, 165, 250, 0.35);
+
+    background: linear-gradient(
+        145deg,
+        #1e2938,
+        #192331
+    );
+}
+
+/* =========================
+   SOURCE + DATE
+   ========================= */
+
+.ai-news-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-bottom: 8px;
+}
+
+.ai-news-source {
+    display: inline-flex;
+    align-items: center;
+
+    color: #60a5fa;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.45px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ai-news-date {
+    flex-shrink: 0;
+
+    color: #7f8b9d;
+
+    font-size: 10px;
+    font-weight: 500;
+}
+
+/* =========================
+   HEADLINE
+   ========================= */
+
+.ai-news-headline {
+    margin: 0 0 7px;
+
+    color: #f8fafc;
+
+    font-size: 13px;
+    font-weight: 750;
+
+    line-height: 1.4;
+
+    overflow: hidden;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+/* =========================
+   SUMMARY
+   ========================= */
+
+.ai-news-summary {
+    margin: 0;
+
+    color: #9aa7b8;
+
+    font-size: 11px;
+    font-weight: 400;
+
+    line-height: 1.5;
+
+    overflow: hidden;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+/* =========================
+   READ MORE
+   ========================= */
+
+.ai-news-link {
+    display: inline-flex;
+    align-items: center;
+
+    margin-top: 10px;
+
+    color: #60a5fa;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.ai-news-link:hover {
+    color: #93c5fd;
+    text-decoration: none;
+}
+
+/* =========================
+   AI MESSAGE CONTAINING NEWS
+   ========================= */
+
+.ai-message:has(.ai-news-response) {
+    width: 100%;
+    max-width: 100%;
+
+    padding: 12px;
+
+    background: #151d28;
+
+    box-sizing: border-box;
+}
+
+/* =========================
+   CHAT SCROLLING
+   ========================= */
+
+.ai-chat-body {
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(96, 165, 250, 0.35)
+        transparent;
+}
+
+.ai-chat-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ai-chat-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ai-chat-body::-webkit-scrollbar-thumb {
+    background: rgba(96, 165, 250, 0.3);
+    border-radius: 999px;
+}
+
+.ai-chat-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(96, 165, 250, 0.5);
+}
+
+/* =========================
+   SMALL PHONE TUNING
+   ========================= */
+
+@media (max-width: 480px) {
+
+    .ai-news-card {
+        padding: 11px;
+        border-radius: 12px;
+    }
+
+    .ai-news-title {
+        font-size: 14px;
+    }
+
+    .ai-news-headline {
+        font-size: 12px;
+    }
+
+    .ai-news-summary {
+        font-size: 10.5px;
+    }
+
+}

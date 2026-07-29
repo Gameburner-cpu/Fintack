@@ -51,10 +51,11 @@ class NewsFormatter {
 
         /* =====================================================
                     LIMIT CHAT RESULTS
+           Keep the AI response compact and readable.
         ===================================================== */
 
         const topArticles =
-            articles.slice(0, 5);
+            articles.slice(0, 3);
 
 
         /* =====================================================
@@ -83,29 +84,7 @@ class NewsFormatter {
 
 
         /* =====================================================
-                    BUILD TEXT MESSAGE
-        ===================================================== */
-
-        const messageParts = [
-            heading
-        ];
-
-        topArticles.forEach(
-            (article, index) => {
-
-                messageParts.push(
-                    `${index + 1}. ${article.headline}`
-                );
-
-            }
-        );
-
-        const message =
-            messageParts.join("\n\n");
-
-
-        /* =====================================================
-                        BUILD HTML
+                    BUILD HTML CARDS
         ===================================================== */
 
         const cards =
@@ -141,7 +120,7 @@ class NewsFormatter {
                         );
 
                     return `
-                        <div class="ai-news-card">
+                        <article class="ai-news-card">
 
                             <div class="ai-news-card-header">
 
@@ -161,16 +140,16 @@ class NewsFormatter {
 
                             </div>
 
-                            <div class="ai-news-headline">
+                            <h4 class="ai-news-headline">
                                 ${headline}
-                            </div>
+                            </h4>
 
                             ${
                                 summary
                                     ? `
-                                    <div class="ai-news-summary">
+                                    <p class="ai-news-summary">
                                         ${summary}
-                                    </div>
+                                    </p>
                                     `
                                     : ""
                             }
@@ -184,13 +163,13 @@ class NewsFormatter {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
-                                        Read article ↗
+                                        Read More ↗
                                     </a>
                                     `
                                     : ""
                             }
 
-                        </div>
+                        </article>
                     `;
 
                 })
@@ -201,20 +180,39 @@ class NewsFormatter {
 
             <div class="ai-news-response">
 
-                <div class="ai-news-title">
-                    ${this.escapeHTML(heading)}
+                <div class="ai-news-response-header">
+
+                    <div class="ai-news-title">
+                        ${this.escapeHTML(heading)}
+                    </div>
+
+                    <div class="ai-news-count">
+                        ${topArticles.length}
+                        ${topArticles.length === 1 ? "story" : "stories"}
+                    </div>
+
                 </div>
 
-                ${cards}
+                <div class="ai-news-list">
+                    ${cards}
+                </div>
 
             </div>
 
         `;
 
 
+        /* =====================================================
+                    IMPORTANT:
+           Do not duplicate the headlines as plain text.
+
+           ResponseEngine/UI can render the HTML cards while the
+           message remains empty.
+        ===================================================== */
+
         return {
 
-            message,
+            message: "",
 
             html
 
