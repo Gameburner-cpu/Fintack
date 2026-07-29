@@ -142,9 +142,9 @@ if (updateError) {
 
 }
         res.json({
-            success: true,
-            message: data
-        });
+    success: true,
+    savedMessage: data
+});
     }
 
     catch (err) {
