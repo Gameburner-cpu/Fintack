@@ -1,19 +1,6 @@
 const express = require("express");
 const router = express.Router();
 
-/* =====================================================
-                    TEST NEWS ROUTE
-===================================================== */
-
-router.get("/test", (req, res) => {
-    res.json({
-        success: true,
-        message: "FinTack News API route is working."
-    });
-});
-
-module.exports = router;
-
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 
 /* =====================================================
@@ -92,14 +79,14 @@ function formatDate(date) {
 }
 
 /* =====================================================
-                HEALTH / CONNECTION TEST
+                FINNHUB CONNECTION TEST
 ===================================================== */
 
 /*
     GET /api/news/test
 
     Confirms that:
-    - the route is mounted,
+    - the Express news route is mounted,
     - FINNHUB_API_KEY is available,
     - Finnhub can be reached.
 */
@@ -132,9 +119,6 @@ router.get("/test", async (req, res) => {
 
 /*
     GET /api/news/market?category=general&limit=10
-
-    Finnhub categories:
-    general, forex, crypto, merger
 */
 
 router.get("/market", async (req, res) => {
@@ -188,10 +172,6 @@ router.get("/market", async (req, res) => {
 
 /*
     GET /api/news/company/AAPL?days=7&limit=10
-
-    NOTE:
-    Finnhub's Company News endpoint is documented for
-    North American companies.
 */
 
 router.get("/company/:symbol", async (req, res) => {
@@ -256,11 +236,7 @@ router.get("/company/:symbol", async (req, res) => {
 /*
     GET /api/news/daily?symbols=AAPL,MSFT,NVDA&limit=6
 
-    This combines recent company news for multiple symbols.
-    It is intended for FinTack's DAILY STOCK NEWS section.
-
-    To avoid wasting free API calls, keep the default
-    symbol list small.
+    Combines recent company news for multiple symbols.
 */
 
 router.get("/daily", async (req, res) => {
@@ -353,5 +329,9 @@ router.get("/daily", async (req, res) => {
         });
     }
 });
+
+/* =====================================================
+                    EXPORT ROUTER
+===================================================== */
 
 module.exports = router;
