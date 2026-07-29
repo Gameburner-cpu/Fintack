@@ -547,6 +547,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     /* ======================================================
                             EVENT LISTENERS
     ====================================================== */
+
+    /* ==========================================================
+        CALENDAR TRANSACTION → DASHBOARD SYNC
+========================================================== */
+
+window.addEventListener(
+    "fintack:transaction-created",
+    async (event) => {
+
+        console.log(
+            "[FinTack] Calendar transaction detected.",
+            event.detail
+        );
+
+        await syncDataAndUpdateUI();
+
+        console.log(
+            "[FinTack] Dashboard synchronized with calendar."
+        );
+    }
+);
     function activatePage(id) {
         if (!id) return;
         pages.forEach(page => page.classList.remove("active"));
