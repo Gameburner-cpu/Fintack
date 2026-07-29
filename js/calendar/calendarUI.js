@@ -605,10 +605,10 @@ class CalendarUI {
                 .fintack-calendar-overlay { padding: 10px; }
                 
                 .fintack-calendar-modal {
-                    width: calc(100vw - 20px) !important;
-                    max-width: 380px !important;
-                    max-height: calc(100dvh - 20px) !important;
-                    border-radius: 24px !important;
+                    width: calc(100vw - 36px) !important;
+                    max-width: 360px !important;
+                    max-height: 88dvh !important;
+                    border-radius: 22px !important;
                 }
 
                 .calendar-header { padding: 16px 16px 10px !important; }
