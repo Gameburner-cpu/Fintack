@@ -21,6 +21,7 @@ class CalendarUI {
         this.modal = null;
         this.isOpen = false;
         this.boundEscapeHandler = this.handleEscape.bind(this);
+        this.entryType = "expense";
     }
 
     init() {
@@ -115,6 +116,30 @@ class CalendarUI {
                     <div class="selected-day-total" id="calendar-selected-total">₹0</div>
                 </div>
 
+                <div class="calendar-quick-actions">
+                    <button class="calendar-add-btn income" id="calendar-add-income" type="button">+ Add Income</button>
+                    <button class="calendar-add-btn expense" id="calendar-add-expense" type="button">− Add Expense</button>
+                </div>
+
+                <form class="calendar-entry-form" id="calendar-entry-form">
+                    <div class="calendar-entry-form-header">
+                        <span id="calendar-entry-form-title">Add Expense</span>
+                        <button type="button" id="calendar-entry-cancel">×</button>
+                    </div>
+                    <input id="calendar-entry-title" type="text" placeholder="Title (e.g. Fuel)" maxlength="80" required>
+                    <div class="calendar-entry-row">
+                        <input id="calendar-entry-amount" type="number" min="0.01" step="0.01" placeholder="Amount" required>
+                        <select id="calendar-entry-category">
+                            <option value="Other">Other</option><option value="Food">Food</option>
+                            <option value="Transport">Transport</option><option value="Shopping">Shopping</option>
+                            <option value="Bills">Bills</option><option value="Health">Health</option>
+                            <option value="Entertainment">Entertainment</option><option value="Salary">Salary</option>
+                            <option value="Investment">Investment</option>
+                        </select>
+                    </div>
+                    <button class="calendar-entry-save" id="calendar-entry-save" type="submit">Add Expense</button>
+                </form>
+
                 <div class="calendar-transactions" id="calendar-transactions">
                     <div class="calendar-empty-state">
                         <div class="calendar-empty-icon">🧾</div>
@@ -153,6 +178,10 @@ class CalendarUI {
         });
 
         this.modal.addEventListener("click", event => event.stopPropagation());
+        this.modal.querySelector("#calendar-add-income")?.addEventListener("click", () => this.showEntryForm("income"));
+        this.modal.querySelector("#calendar-add-expense")?.addEventListener("click", () => this.showEntryForm("expense"));
+        this.modal.querySelector("#calendar-entry-cancel")?.addEventListener("click", () => this.hideEntryForm());
+        this.modal.querySelector("#calendar-entry-form")?.addEventListener("submit", event => this.submitEntry(event));
 
         this.injectStyles();
     }
@@ -296,6 +325,75 @@ class CalendarUI {
 
         this.setText("#calendar-selected-total", this.formatMoney(balance));
         this.renderTransactions(transactions);
+    }
+
+    showEntryForm(type) {
+        if (!this.state?.selectedDay) return alert("Select a date first.");
+        this.entryType = type === "income" ? "income" : "expense";
+        const form = this.modal?.querySelector("#calendar-entry-form");
+        const label = this.entryType === "income" ? "Add Income" : "Add Expense";
+        this.setText("#calendar-entry-form-title", label);
+        this.setText("#calendar-entry-save", label);
+        form?.classList.add("active");
+        this.modal?.querySelector("#calendar-entry-title")?.focus();
+    }
+
+    hideEntryForm() {
+        const form = this.modal?.querySelector("#calendar-entry-form");
+        form?.reset();
+        form?.classList.remove("active");
+    }
+
+    getSelectedDateKey() {
+        const selected = this.state?.selectedDay;
+        if (!selected) return null;
+        if (selected.dateKey) return String(selected.dateKey).split("T")[0];
+        if (selected.date instanceof Date) {
+            const y = selected.date.getFullYear();
+            const m = String(selected.date.getMonth() + 1).padStart(2, "0");
+            const d = String(selected.date.getDate()).padStart(2, "0");
+            return `${y}-${m}-${d}`;
+        }
+        return selected.date ? String(selected.date).split("T")[0] : null;
+    }
+
+    async submitEntry(event) {
+        event.preventDefault();
+        let user = null;
+        try { user = JSON.parse(localStorage.getItem("user") || "null"); } catch (_) {}
+
+        const date = this.getSelectedDateKey();
+        const title = this.modal?.querySelector("#calendar-entry-title")?.value.trim() || "";
+        const amount = Number(this.modal?.querySelector("#calendar-entry-amount")?.value || 0);
+        const category = this.modal?.querySelector("#calendar-entry-category")?.value || "Other";
+        const save = this.modal?.querySelector("#calendar-entry-save");
+
+        if (!user?.id) return alert("Please login first.");
+        if (!date) return alert("Select a date first.");
+        if (!title || !Number.isFinite(amount) || amount <= 0) return alert("Enter a title and valid amount.");
+
+        const oldText = save?.textContent || "Save";
+        try {
+            if (save) { save.disabled = true; save.textContent = "Saving..."; }
+            const response = await fetch("https://fintack.onrender.com/api/transactions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: user.id, title, amount, category, date, type: this.entryType })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || result?.success === false) throw new Error(result?.message || result?.error || "Failed to save transaction.");
+
+            this.hideEntryForm();
+            if (typeof this.calendar.refresh === "function") await this.calendar.refresh();
+            if (typeof this.calendar.selectDate === "function") this.calendar.selectDate(date);
+            this.render();
+            window.dispatchEvent(new CustomEvent("fintack:transaction-created", { detail: { date, type: this.entryType } }));
+        } catch (error) {
+            console.error("[CalendarUI] Failed to save transaction:", error);
+            alert(error.message || "Failed to save transaction.");
+        } finally {
+            if (save) { save.disabled = false; save.textContent = oldText; }
+        }
     }
 
     renderTransactions(transactions) {
@@ -597,6 +695,18 @@ class CalendarUI {
             .calendar-empty-icon { margin-bottom: 6px; font-size: 22px; opacity: 0.7; }
             .calendar-empty-title { font-size: 12px; font-weight: 700; }
             .calendar-empty-text { margin-top: 4px; color: #778395; font-size: 9px; }
+
+            .calendar-quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+            .calendar-add-btn { min-height:38px; border:1px solid rgba(255,255,255,.07); border-radius:12px; background:#18212e; color:#fff; font-size:11px; font-weight:800; cursor:pointer; }
+            .calendar-add-btn.income { color:#68ddb0; } .calendar-add-btn.expense { color:#ff8b8b; }
+            .calendar-entry-form { display:none; margin-bottom:12px; padding:12px; border-radius:14px; background:#121b27; border:1px solid rgba(255,255,255,.07); }
+            .calendar-entry-form.active { display:block; }
+            .calendar-entry-form-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:12px; font-weight:800; }
+            #calendar-entry-cancel { width:28px; height:28px; border:0; border-radius:50%; background:rgba(255,255,255,.06); color:#aab4c2; font-size:19px; }
+            .calendar-entry-form input, .calendar-entry-form select { width:100%; box-sizing:border-box; min-height:40px; padding:0 11px; border:1px solid rgba(255,255,255,.08); border-radius:11px; outline:none; background:#0c131d; color:#fff; font-size:11px; }
+            .calendar-entry-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+            .calendar-entry-save { width:100%; min-height:40px; margin-top:8px; border:0; border-radius:11px; background:linear-gradient(135deg,#4b9fff,#78c7ff); color:#07111e; font-size:11px; font-weight:900; }
+            .calendar-entry-save:disabled { opacity:.55; }
 
             /* ======================================================
                MOBILE RESPONSIVENESS
