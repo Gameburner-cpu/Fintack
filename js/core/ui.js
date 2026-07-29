@@ -1,6 +1,7 @@
 /* ==========================================================================
    js/ui.js - Handles DOM manipulation and rendering data to the screen
 ========================================================================== */
+import GoalPlanner from "../ai/mod/goals/goalPlanner.js";
 
 /* =====================================================
                 RENDER STOCKS
@@ -130,33 +131,116 @@ export function updateDashboard(summary) {
 }
 
 /* =====================================================
-                UPDATE AI RECOMMENDATIONS
+        UPDATE AI GOAL RECOMMENDATIONS
 ===================================================== */
 export function updateAIRecommendations(goals) {
     const recommendationTextEl = document.getElementById("ai-recommendation-text");
+
     if (!recommendationTextEl) return;
 
+    // No goals yet
     if (!goals || goals.length === 0) {
-        recommendationTextEl.innerHTML = "Create your first financial goal above, and FinTack AI will analyze your strategy here.";
+        recommendationTextEl.innerHTML =
+            "Create your first financial goal above, and FinTack AI will calculate a savings plan for you.";
         return;
     }
 
-    // Sort goals to look at the one closest to completion or highest target priority
-    const primaryGoal = goals[0];
-    const targetAmount = Number(primaryGoal.target_amount) || 0;
-    const savedAmount = Number(primaryGoal.saved_amount) || 0;
-    const remaining = targetAmount - savedAmount;
+    // Create a smart plan for every active goal
+    const goalPlans = goals.map(goal => {
+        const plan = GoalPlanner.createSmartPlan(goal);
+        return {
+            goal,
+            plan
+        };
+    });
 
-    if (remaining <= 0) {
-        recommendationTextEl.innerHTML = `🎉 Congratulations! You have fully achieved your <strong>${primaryGoal.title}</strong> goal! Use the planner to chart your next target.`;
+    console.log(
+        "🎯 FinTack All Goal Plans:",
+        goalPlans
+    );
+
+    // Keep only valid active plans
+    const activePlans = goalPlans.filter(item =>
+        item.plan &&
+        item.plan.success &&
+        item.plan.status === "active"
+    );
+
+    // Check whether every goal is already completed
+    if (activePlans.length === 0) {
+        const allCompleted = goalPlans.every(
+            item => item.plan?.status === "completed"
+        );
+
+        if (allCompleted) {
+            recommendationTextEl.innerHTML = `
+                🎉 Congratulations! All your financial goals
+                have been achieved.
+            `;
+        } else {
+            recommendationTextEl.innerHTML = `
+                FinTack couldn't calculate an active savings plan.
+                Please check your goal amounts and deadlines.
+            `;
+        }
         return;
     }
 
-    // Generate simulated context-aware recommendations matching your UI design patterns
-    const smartBoost = Math.max(1000, Math.round((targetAmount * 0.02) / 100) * 100); 
-    const monthsSaved = Math.min(6, Math.max(1, Math.round(remaining / (smartBoost * 5))));
+    // Calculate combined saving requirement
+    const totalDaily = activePlans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.daily) || 0),
+        0
+    );
+    
+    const totalWeekly = activePlans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.weekly) || 0),
+        0
+    );
+    
+    const totalMonthly = activePlans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.monthly) || 0),
+        0
+    );
 
-    recommendationTextEl.innerHTML = `Increase your monthly savings allocation by <strong>₹${smartBoost.toLocaleString("en-IN")}</strong> to reach your <strong>${primaryGoal.title}</strong> target nearly <strong>${monthsSaved} months earlier</strong>.`;
+    // Build compact individual goal breakdown
+    const goalBreakdown = activePlans.map(item => {
+        const goal = item.goal;
+        const plan = item.plan;
+        const monthly = Number(plan.required?.monthly) || 0;
+
+        return `
+            <div class="ai-goal-plan-item">
+                <strong>${goal.title}</strong>
+                <span>
+                    ₹${monthly.toLocaleString("en-IN")}/month
+                </span>
+            </div>
+        `;
+    }).join("");
+
+    // Render combined AI recommendation
+    recommendationTextEl.innerHTML = `
+        <div class="ai-goal-summary">
+            <div class="ai-goal-summary-title">
+                ${activePlans.length} Active Goal${activePlans.length > 1 ? "s" : ""}
+            </div>
+
+            <div class="ai-goal-breakdown">
+                ${goalBreakdown}
+            </div>
+
+            <div class="ai-goal-total">
+                <span>Total Required</span>
+                <strong>
+                    ₹${totalMonthly.toLocaleString("en-IN")} / month
+                </strong>
+            </div>
+
+            <div class="ai-goal-frequency">
+                ₹${totalDaily.toLocaleString("en-IN")}/day • ₹${totalWeekly.toLocaleString("en-IN")}/week
+            </div>
+        </div>
+    `;
 }
 
 /* =====================================================
