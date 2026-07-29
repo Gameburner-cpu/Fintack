@@ -8,7 +8,7 @@ import {
     fetchGoals,
     addTransaction
 } from "./api.js";
-
+import Calendar from "../calendar/calendar.js";
 import {
     renderStocks,
     renderNews,
@@ -17,9 +17,16 @@ import {
     updateDashboard,
     updateGoalSummary
 } from "./ui.js";
+import CalendarUI from "../calendar/calendarUI.js";
 import Navigation from "./navigation.js";
 import FinTackAI from "../ai/FinTackAI.js";
 import AIStorage from "../ai/aiStorage.js";
+import {
+    getCalendarTransactions,
+    getTransactionsForDate,
+    calculateDailyTotals,
+    groupTransactionsByDate
+} from "../calendar/calendarAPI.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
     /* ======================================================
@@ -141,6 +148,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateNodeValue("profile-name", user.full_name);
         updateNodeValue("profile-tier", "Premium Member");
         await initializeDashboard(user.id);
+
+        /* ==========================================================
+                CALENDAR ENGINE TEST
+        ========================================================== */
+
+        await Calendar.initialize(user.id);
+
+        console.log("🗓️ CALENDAR ENGINE STATE:", Calendar.getCalendarState());
+        console.log("🗓️ CALENDAR DAYS:", Calendar.getCalendarDays());
+        console.log("🗓️ SELECTED DAY:", Calendar.getSelectedDayData());
+        console.log("🗓️ CURRENT MONTH:", Calendar.getCurrentMonthData());
+
+        const calendarTestTransactions = await getCalendarTransactions(user.id);
+
+        console.log("📅 CALENDAR TEST - ALL:", calendarTestTransactions);
+        console.log("📅 CALENDAR TEST - GROUPED:", groupTransactionsByDate(calendarTestTransactions));
+
+        const todayCalendarTransactions = getTransactionsForDate(calendarTestTransactions, new Date());
+
+        console.log("📅 CALENDAR TEST - TODAY:", todayCalendarTransactions);
+        console.log("📅 CALENDAR TEST - TODAY TOTAL:", calculateDailyTotals(todayCalendarTransactions));
     } else {
         if (loginModal) loginModal.classList.remove("hidden");
     }
@@ -495,6 +523,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    /* ==========================================================
+            CALENDAR BUTTON
+    ========================================================== */
+    const calendarButton = document.getElementById("calendarButton");
+
+    if (calendarButton) {
+        calendarButton.addEventListener("click", async () => {
+            console.log("[Calendar] Open requested");
+            try {
+                if (!window.fintackCalendarUI) {
+                    window.fintackCalendarUI = new CalendarUI(Calendar);
+                    window.fintackCalendarUI.init();
+                }
+                await window.fintackCalendarUI.open();
+            } catch (error) {
+                console.error("[Calendar] Failed to open:", error);
+            }
+        });
+    }
+
     /* ======================================================
                     AI INTEL CORE ENGINE
     ====================================================== */
@@ -576,7 +624,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     /* ======================================================
-                        NEW CHAT
+                            NEW CHAT
     ====================================================== */
     if (newChatBtn) {
         newChatBtn.addEventListener("click", () => {
