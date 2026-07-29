@@ -1,4 +1,5 @@
 import TripModule from "./trip/index.js";
+import NewsModule from "./news/index.js";
 
 // Future Modules
 // import BudgetModule from "./budget/index.js";
@@ -10,7 +11,8 @@ import TripModule from "./trip/index.js";
 
 const Modules = [
 
-    TripModule
+    TripModule,
+    NewsModule
 
     // BudgetModule,
     // GoalModule,

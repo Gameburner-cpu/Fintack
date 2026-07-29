@@ -1302,11 +1302,24 @@ function extractStockSymbol(question) {
 function isNewsQuestion(question) {
     const text = String(question || "").toLowerCase();
 
-    return [
+    /*
+        Route only genuinely time-sensitive market/company-news questions
+        to Finnhub. General finance questions continue to /api/ai/ask.
+    */
+    const newsTerms = [
         "news",
         "latest",
         "headline",
         "headlines",
+        "today",
+        "recent",
+        "update",
+        "updates",
+        "what happened",
+        "happening"
+    ];
+
+    const marketTerms = [
         "market",
         "stock",
         "stocks",
@@ -1317,10 +1330,25 @@ function isNewsQuestion(question) {
         "amazon",
         "meta",
         "google",
+        "alphabet",
         "amd",
         "intel",
-        "netflix"
-    ].some(keyword => text.includes(keyword));
+        "netflix",
+        "aapl",
+        "nvda",
+        "msft",
+        "tsla",
+        "amzn",
+        "googl",
+        "goog",
+        "intc",
+        "nflx"
+    ];
+
+    const hasNewsIntent = newsTerms.some(term => text.includes(term));
+    const hasMarketContext = marketTerms.some(term => text.includes(term));
+
+    return hasNewsIntent && hasMarketContext;
 }
 
 async function fetchFinTackNewsAnswer(question) {
@@ -1433,6 +1461,11 @@ async function submitFinTackAIQuestion(question) {
 
     try {
         if (isNewsQuestion(cleanQuestion)) {
+            console.log(
+                "📰 Ask FinTack AI routing to Finnhub News:",
+                cleanQuestion
+            );
+
             const result =
                 await fetchFinTackNewsAnswer(cleanQuestion);
 
@@ -1444,6 +1477,11 @@ async function submitFinTackAIQuestion(question) {
                 result.extraHTML
             );
         } else {
+            console.log(
+                "🤖 Ask FinTack AI routing to General AI:",
+                cleanQuestion
+            );
+
             const answer =
                 await fetchFinTackGeneralAIAnswer(cleanQuestion);
 
