@@ -2364,4 +2364,270 @@ body {
         height: 40px;
     }
 }
+/* =========================================================
+   FINTACK SMART GOAL PLAN MODAL
+========================================================= */
 
+.goal-optimization-overlay {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(2, 7, 14, 0.82);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+
+    z-index: 99999;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.goal-optimization-modal {
+    width: 100%;
+    max-width: 380px;
+    max-height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
+    background: #171f2c;
+    border: 1px solid #2b3749;
+    border-radius: 20px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.55),
+        0 0 30px rgba(105, 180, 255, 0.08);
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.goal-optimization-header {
+    position: relative;
+    padding: 22px 54px 18px 20px;
+    border-bottom: 1px solid #273244;
+}
+
+.goal-optimization-label {
+    display: inline-block;
+    margin-bottom: 6px;
+    color: #72b7f5;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+}
+
+.goal-optimization-header h2 {
+    margin: 0 0 7px;
+    color: #ffffff;
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.goal-optimization-header p {
+    margin: 0;
+    color: #929dac;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   CLOSE BUTTON
+========================================================= */
+
+.goal-optimization-close {
+    position: absolute;
+    top: 17px;
+    right: 17px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: #222c3b;
+    color: #aab4c2;
+    border: 1px solid #303c4e;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.goal-optimization-close:hover {
+    background: #2b3748;
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   MODAL CONTENT
+========================================================= */
+
+.goal-optimization-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+
+/* =========================================================
+   LOADING STATE
+========================================================= */
+
+.optimization-loading {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    color: #aab4c2;
+    font-size: 12px;
+}
+
+.optimization-loading i {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(114, 183, 245, 0.10);
+    color: #72b7f5;
+    border: 1px solid rgba(114, 183, 245, 0.20);
+    border-radius: 14px;
+    font-size: 19px;
+}
+
+
+/* =========================================================
+   BOTTOM ACTION AREA
+========================================================= */
+
+.goal-optimization-actions {
+    display: grid;
+    grid-template-columns: 0.8fr 1.4fr;
+    gap: 10px;
+    padding: 15px 20px 20px;
+    border-top: 1px solid #273244;
+    background: #171f2c;
+}
+
+
+/* =========================================================
+   CANCEL
+========================================================= */
+
+.optimization-cancel-btn {
+    min-height: 44px;
+    padding: 10px 14px;
+    background: #202a38;
+    color: #b5bfcc;
+    border: 1px solid #303c4e;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.optimization-cancel-btn:hover {
+    background: #283445;
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   APPLY PLAN
+========================================================= */
+
+.optimization-apply-btn {
+    min-height: 44px;
+    padding: 10px 14px;
+    background: #72b7f5;
+    color: #07111c;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.optimization-apply-btn:hover:not(:disabled) {
+    background: #83c2fa;
+}
+
+.optimization-apply-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+
+/* DISABLED UNTIL PLAN IS GENERATED */
+
+.optimization-apply-btn:disabled {
+    background: #293342;
+    color: #667181;
+
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .goal-optimization-overlay {
+        padding: 16px;
+    }
+
+    .goal-optimization-modal {
+        max-width: 360px;
+        max-height: calc(100dvh - 32px);
+
+        border-radius: 18px;
+    }
+
+    .goal-optimization-header {
+        padding:
+            20px
+            52px
+            17px
+            18px;
+    }
+
+    .goal-optimization-header h2 {
+        font-size: 19px;
+    }
+
+    .goal-optimization-content {
+        padding: 18px;
+    }
+
+    .goal-optimization-actions {
+        padding:
+            14px
+            18px
+            18px;
+    }
+}

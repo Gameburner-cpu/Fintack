@@ -109,6 +109,29 @@ export function renderTransactions(transactions) {
                 UPDATE DASHBOARD
 ===================================================== */
 export function updateDashboard(summary) {
+    /*
+        Cache the same monthly income/expense values already calculated
+        by the dashboard. The Goal Planner uses this exact data so the
+        Optimize Plan modal never falls back to ₹0 unless the user
+        genuinely has no monthly income/savings capacity.
+    */
+    if (summary) {
+        currentFinancialData = {
+            monthlyIncome: Number(
+                summary.monthlyIncome ??
+                summary.income ??
+                0
+            ) || 0,
+
+            monthlyExpense: Number(
+                summary.monthlyExpense ??
+                summary.monthlyExpenses ??
+                summary.expenses ??
+                0
+            ) || 0
+        };
+    }
+
     const netWorth = document.getElementById("net-worth");
     const monthlySaving = document.getElementById("monthly-saving");
     const goalText = document.getElementById("goal-progress");
@@ -134,6 +157,9 @@ export function updateDashboard(summary) {
         UPDATE AI GOAL RECOMMENDATIONS
 ===================================================== */
 export function updateAIRecommendations(goals) {
+    // Keep the latest rendered goals available to the optimization modal.
+    currentRenderedGoals = Array.isArray(goals) ? goals : [];
+
     const recommendationTextEl = document.getElementById("ai-recommendation-text");
 
     if (!recommendationTextEl) return;
@@ -147,7 +173,10 @@ export function updateAIRecommendations(goals) {
 
     // Create a smart plan for every active goal
     const goalPlans = goals.map(goal => {
-        const plan = GoalPlanner.createSmartPlan(goal);
+        const plan = GoalPlanner.createSmartPlan(
+            goal,
+            currentFinancialData
+        );
         return {
             goal,
             plan
@@ -333,4 +362,582 @@ export function updateGoalSummary(goals) {
     if (overallSavedEl) overallSavedEl.textContent = "₹" + totalSaved.toLocaleString() + " Saved";
     if (overallTargetEl) overallTargetEl.textContent = "₹" + totalTarget.toLocaleString() + " Target";
     if (overallProgressBarEl) overallProgressBarEl.style.width = progress + "%";
+}
+/* =========================================================
+   OPTIMIZE GOAL PLAN
+========================================================= */
+/*
+    Keep the latest goals rendered by the Goals screen available
+    to the optimization modal. This avoids duplicating goal storage
+    logic inside the modal.
+*/
+let currentRenderedGoals = [];
+let currentFinancialData = {
+    monthlyIncome: 0,
+    monthlyExpense: 0
+};
+
+/*
+    NOTE:
+    renderGoals() calls updateAIRecommendations(goals), so the modal can
+    safely obtain the latest goals from the DOM-independent cache below.
+*/
+function getOptimizationGoals() {
+    return Array.isArray(currentRenderedGoals) ? currentRenderedGoals : [];
+}
+
+document.addEventListener("click", (event) => {
+    const optimizeButton = event.target.closest("#optimizeGoalPlanBtn");
+    if (!optimizeButton) return;
+
+    console.log("🎯 Optimize Plan clicked");
+    openGoalOptimizationPlan();
+});
+
+function formatINR(value) {
+    const amount = Number(value) || 0;
+    return "₹" + Math.round(amount).toLocaleString("en-IN");
+}
+
+function calculateGoalOptimization(goals) {
+    const plans = goals
+        .map(goal => ({
+            goal,
+            plan: GoalPlanner.createSmartPlan(
+                goal,
+                currentFinancialData
+            )
+        }))
+        .filter(item =>
+            item.plan &&
+            item.plan.success &&
+            item.plan.status === "active"
+        );
+
+    const totalMonthly = plans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.monthly) || 0),
+        0
+    );
+
+    const totalWeekly = plans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.weekly) || 0),
+        0
+    );
+
+    const totalDaily = plans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.daily) || 0),
+        0
+    );
+
+    /*
+        GoalPlanner may expose affordability data. Use it when present.
+        If it is unavailable, the modal still shows the deadline-based
+        savings requirements without inventing financial capacity.
+    */
+    const capacities = plans
+        .map(item => Number(item.plan.affordability?.availableMonthlySavings))
+        .filter(Number.isFinite);
+
+    const availableMonthly =
+        capacities.length > 0 ? Math.max(...capacities) : null;
+
+    const shortfall =
+        availableMonthly === null
+            ? null
+            : Math.max(totalMonthly - availableMonthly, 0);
+
+    const affordable =
+        availableMonthly === null
+            ? null
+            : totalMonthly <= availableMonthly;
+
+    /*
+        Allocate available monthly savings proportionally across goals
+        when the deadline requirements exceed capacity. Otherwise each
+        goal receives its full required monthly amount.
+    */
+    const optimizedGoals = plans.map(item => {
+        const requiredMonthly =
+            Number(item.plan.required?.monthly) || 0;
+
+        let recommendedMonthly = requiredMonthly;
+
+        if (
+            availableMonthly !== null &&
+            totalMonthly > availableMonthly &&
+            totalMonthly > 0
+        ) {
+            recommendedMonthly =
+                availableMonthly *
+                (requiredMonthly / totalMonthly);
+        }
+
+        return {
+            goal: item.goal,
+            plan: item.plan,
+            requiredMonthly,
+            recommendedMonthly
+        };
+    });
+
+    return {
+        plans,
+        optimizedGoals,
+        totalMonthly,
+        totalWeekly,
+        totalDaily,
+        availableMonthly,
+        shortfall,
+        affordable
+    };
+}
+
+function renderGoalOptimizationResult(content, result) {
+    if (!content) return;
+
+    if (!result.plans.length) {
+        content.innerHTML = `
+            <div class="optimization-empty">
+                <i class="fa-solid fa-circle-info"></i>
+                <h3>No active goals to optimize</h3>
+                <p>
+                    Create an active financial goal with a valid target
+                    amount and future deadline first.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    const goalRows = result.optimizedGoals.map(item => {
+        const deadline = item.goal.deadline
+            ? new Date(item.goal.deadline).toLocaleDateString()
+            : "No deadline";
+
+        const allocationChanged =
+            Math.round(item.recommendedMonthly) !==
+            Math.round(item.requiredMonthly);
+
+        return `
+            <div class="optimization-goal-item">
+                <div class="optimization-goal-top">
+                    <div>
+                        <strong>${item.goal.title}</strong>
+                        <span>Deadline: ${deadline}</span>
+                    </div>
+
+                    <strong class="optimization-goal-required">
+                        ${formatINR(item.requiredMonthly)}/month
+                    </strong>
+                </div>
+
+                ${
+                    allocationChanged
+                        ? `
+                            <div class="optimization-goal-allocation">
+                                <span>Suggested allocation</span>
+                                <strong>
+                                    ${formatINR(item.recommendedMonthly)}/month
+                                </strong>
+                            </div>
+                        `
+                        : ""
+                }
+            </div>
+        `;
+    }).join("");
+
+    let capacityBlock = "";
+
+    if (result.availableMonthly !== null) {
+        capacityBlock = `
+            <div class="optimization-capacity-grid">
+                <div class="optimization-stat">
+                    <span>Available / month</span>
+                    <strong>
+                        ${formatINR(result.availableMonthly)}
+                    </strong>
+                </div>
+
+                <div class="optimization-stat">
+                    <span>
+                        ${result.affordable ? "Remaining" : "Shortfall"}
+                    </span>
+                    <strong>
+                        ${
+                            result.affordable
+                                ? formatINR(
+                                    Math.max(
+                                        result.availableMonthly -
+                                        result.totalMonthly,
+                                        0
+                                    )
+                                )
+                                : formatINR(result.shortfall)
+                        }
+                    </strong>
+                </div>
+            </div>
+        `;
+    }
+
+    let statusBlock = "";
+
+    if (result.affordable === true) {
+        statusBlock = `
+            <div class="optimization-status success">
+                <i class="fa-solid fa-circle-check"></i>
+                <div>
+                    <strong>Your current plan is achievable.</strong>
+                    <span>
+                        Your available monthly savings can cover the
+                        required contributions for these deadlines.
+                    </span>
+                </div>
+            </div>
+        `;
+    } else if (result.affordable === false) {
+        statusBlock = `
+            <div class="optimization-status warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div>
+                    <strong>Your current deadlines need adjustment.</strong>
+                    <span>
+                        You need ${formatINR(result.shortfall)} more per
+                        month to fully meet all current deadlines.
+                        FinTack has distributed your available savings
+                        proportionally below.
+                    </span>
+                </div>
+            </div>
+        `;
+    } else {
+        statusBlock = `
+            <div class="optimization-status">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <div>
+                    <strong>Deadline savings plan calculated.</strong>
+                    <span>
+                        Financial capacity data is not available yet,
+                        so the plan below shows the amount required to
+                        meet each deadline.
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
+    content.innerHTML = `
+        <div class="optimization-result">
+
+            <div class="optimization-summary">
+                <div>
+                    <span>Active Goals</span>
+                    <strong>${result.plans.length}</strong>
+                </div>
+
+                <div>
+                    <span>Total Required / month</span>
+                    <strong>${formatINR(result.totalMonthly)}</strong>
+                </div>
+            </div>
+
+            ${capacityBlock}
+
+            ${statusBlock}
+
+            <div class="optimization-section-title">
+                Goal Allocation
+            </div>
+
+            <div class="optimization-goals-list">
+                ${goalRows}
+            </div>
+
+            <div class="optimization-frequency">
+                <div>
+                    <span>Daily target</span>
+                    <strong>${formatINR(result.totalDaily)}</strong>
+                </div>
+
+                <div>
+                    <span>Weekly target</span>
+                    <strong>${formatINR(result.totalWeekly)}</strong>
+                </div>
+
+                <div>
+                    <span>Monthly target</span>
+                    <strong>${formatINR(result.totalMonthly)}</strong>
+                </div>
+            </div>
+
+        </div>
+    `;
+}
+
+function openGoalOptimizationPlan() {
+    console.log("🧠 Opening FinTack Smart Goal Plan");
+
+    const existingModal =
+        document.getElementById("goalOptimizationModal");
+
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement("div");
+
+    modal.id = "goalOptimizationModal";
+    modal.className = "goal-optimization-overlay";
+
+    modal.innerHTML = `
+        <div class="goal-optimization-modal">
+
+            <div class="goal-optimization-header">
+
+                <div>
+                    <span class="goal-optimization-label">
+                        FINTACK AI
+                    </span>
+
+                    <h2>Smart Savings Plan</h2>
+
+                    <p>
+                        Optimize your goals based on your
+                        current financial capacity.
+                    </p>
+                </div>
+
+                <button
+                    class="goal-optimization-close"
+                    id="closeGoalOptimization"
+                    aria-label="Close"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div
+                class="goal-optimization-content"
+                id="goalOptimizationContent"
+            >
+                <div class="optimization-loading">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>
+                        Analyzing your financial plan...
+                    </span>
+                </div>
+            </div>
+
+            <div class="goal-optimization-actions">
+
+                <button
+                    class="optimization-cancel-btn"
+                    id="cancelGoalOptimization"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="optimization-apply-btn"
+                    id="applyGoalOptimization"
+                    disabled
+                >
+                    Apply Optimized Plan
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = "hidden";
+
+    const closeModal = () => {
+        modal.remove();
+        document.body.style.overflow = "";
+    };
+
+    document
+        .getElementById("closeGoalOptimization")
+        ?.addEventListener("click", closeModal);
+
+    document
+        .getElementById("cancelGoalOptimization")
+        ?.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", event => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    /*
+        Allow the loading state to render first, then perform the
+        calculation. This keeps the modal responsive and preserves
+        the existing loading design.
+    */
+    window.setTimeout(async () => {
+        const content =
+            document.getElementById("goalOptimizationContent");
+
+        const applyButton =
+            document.getElementById("applyGoalOptimization");
+
+        try {
+            const goals = getOptimizationGoals();
+
+            /*
+                Refresh transactions when Optimize Plan is opened.
+                This makes the optimizer use the latest data even after
+                transactions are added from Calendar or the + button.
+            */
+            try {
+                const user = JSON.parse(
+                    localStorage.getItem("user") || "null"
+                );
+
+                if (user?.id) {
+                    const response = await fetch(
+                        `https://fintack.onrender.com/api/transactions/${user.id}`
+                    );
+
+                    if (response.ok) {
+                        const payload = await response.json();
+
+                        const transactions = Array.isArray(payload)
+                            ? payload
+                            : Array.isArray(payload.transactions)
+                                ? payload.transactions
+                                : [];
+
+                        const now = new Date();
+                        let monthlyIncome = 0;
+                        let monthlyExpense = 0;
+
+                        transactions.forEach(transaction => {
+                            const date = new Date(transaction.date);
+
+                            if (
+                                Number.isNaN(date.getTime()) ||
+                                date.getFullYear() !== now.getFullYear() ||
+                                date.getMonth() !== now.getMonth()
+                            ) {
+                                return;
+                            }
+
+                            const amount =
+                                Number(transaction.amount) || 0;
+
+                            if (transaction.type === "income") {
+                                monthlyIncome += amount;
+                            } else if (transaction.type === "expense") {
+                                monthlyExpense += amount;
+                            }
+                        });
+
+                        currentFinancialData = {
+                            monthlyIncome,
+                            monthlyExpense
+                        };
+
+                        console.log(
+                            "💰 FinTack Goal Financial Capacity:",
+                            currentFinancialData
+                        );
+                    }
+                }
+            } catch (financialError) {
+                /*
+                    Do not break the optimizer if the refresh request
+                    fails. It can still use the last dashboard values.
+                */
+                console.warn(
+                    "⚠️ Could not refresh optimizer financial data:",
+                    financialError
+                );
+            }
+
+            const result = calculateGoalOptimization(goals);
+
+            renderGoalOptimizationResult(content, result);
+
+            if (applyButton && result.plans.length > 0) {
+                applyButton.disabled = false;
+
+                applyButton.onclick = () => {
+                    /*
+                        The calculated allocation is exposed as an event
+                        rather than silently modifying saved_amount.
+                        Applying a savings plan must not falsely claim
+                        that money has already been saved.
+                    */
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            "fintack:goal-plan-optimized",
+                            {
+                                detail: {
+                                    generatedAt:
+                                        new Date().toISOString(),
+
+                                    totalRequiredMonthly:
+                                        result.totalMonthly,
+
+                                    availableMonthly:
+                                        result.availableMonthly,
+
+                                    allocations:
+                                        result.optimizedGoals.map(
+                                            item => ({
+                                                goalId: item.goal.id,
+                                                title: item.goal.title,
+                                                requiredMonthly:
+                                                    Math.round(
+                                                        item.requiredMonthly
+                                                    ),
+                                                recommendedMonthly:
+                                                    Math.round(
+                                                        item.recommendedMonthly
+                                                    )
+                                            })
+                                        )
+                                }
+                            }
+                        )
+                    );
+
+                    console.log(
+                        "✨ FinTack Optimized Goal Plan Applied:",
+                        result
+                    );
+
+                    applyButton.textContent = "Plan Applied";
+                    applyButton.disabled = true;
+
+                    window.setTimeout(closeModal, 700);
+                };
+            }
+
+        } catch (error) {
+            console.error(
+                "❌ FinTack Goal Optimization Error:",
+                error
+            );
+
+            if (content) {
+                content.innerHTML = `
+                    <div class="optimization-empty">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <h3>Unable to calculate plan</h3>
+                        <p>
+                            FinTack couldn't generate the savings plan.
+                            Please verify your goal amounts and deadlines.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+    }, 350);
 }
