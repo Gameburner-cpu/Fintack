@@ -104,7 +104,7 @@ Instructions:
 `;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.6-flash",
             contents: prompt,
             config: {
                 tools: [
@@ -348,4 +348,3 @@ router.delete("/chats/:id", async (req, res) => {
 });
 
 module.exports = router;
-    
