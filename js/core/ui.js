@@ -932,3 +932,764 @@ function openGoalOptimizationPlan() {
         }
     }, 350);
 }
+
+
+/* =====================================================
+                ASK FINTACK AI
+===================================================== */
+
+const FINTACK_API_BASE = "https://fintack.onrender.com/api";
+
+let finTackAIInitialized = false;
+let finTackAIConversation = [];
+
+function escapeFinTackHTML(value = "") {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function getFinTackAIUser() {
+    try {
+        return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+        return null;
+    }
+}
+
+function getAskFinTackTrigger() {
+    /*
+        Supports the most common IDs/classes so this can attach to the
+        existing "Ask FinTack AI anything..." control without changing
+        the rest of ui.js.
+    */
+    return (
+        document.getElementById("ask-fintack-ai") ||
+        document.getElementById("ask-fintack") ||
+        document.getElementById("ai-search") ||
+        document.getElementById("ai-search-bar") ||
+        document.querySelector(".ai-search-bar") ||
+        document.querySelector(".ask-ai-bar") ||
+        document.querySelector('[placeholder*="Ask FinTack"]')
+    );
+}
+
+function ensureFinTackAIStyles() {
+    if (document.getElementById("fintack-ai-runtime-styles")) return;
+
+    const style = document.createElement("style");
+    style.id = "fintack-ai-runtime-styles";
+    style.textContent = `
+        .fintack-ai-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.62);
+            backdrop-filter: blur(8px);
+            padding: 14px;
+        }
+
+        .fintack-ai-panel {
+            width: min(100%, 430px);
+            height: min(82vh, 720px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(135, 180, 230, 0.16);
+            border-radius: 24px;
+            background: #111a28;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+        }
+
+        .fintack-ai-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+
+        .fintack-ai-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .fintack-ai-logo {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: rgba(105, 184, 255, .14);
+            color: #72bdff;
+        }
+
+        .fintack-ai-header h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 17px;
+        }
+
+        .fintack-ai-header p {
+            margin: 3px 0 0;
+            color: #8996a8;
+            font-size: 11px;
+        }
+
+        .fintack-ai-close {
+            width: 36px;
+            height: 36px;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,.07);
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+
+        .fintack-ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+            scroll-behavior: smooth;
+        }
+
+        .fintack-ai-message {
+            display: flex;
+            margin-bottom: 14px;
+        }
+
+        .fintack-ai-message.user {
+            justify-content: flex-end;
+        }
+
+        .fintack-ai-bubble {
+            max-width: 88%;
+            padding: 11px 13px;
+            border-radius: 16px;
+            color: #e9f0f8;
+            font-size: 13px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .fintack-ai-message.assistant .fintack-ai-bubble {
+            background: #192536;
+            border: 1px solid rgba(255,255,255,.06);
+            border-bottom-left-radius: 5px;
+        }
+
+        .fintack-ai-message.user .fintack-ai-bubble {
+            background: #6dbaff;
+            color: #06101b;
+            font-weight: 600;
+            border-bottom-right-radius: 5px;
+        }
+
+        .fintack-ai-source-card {
+            margin-top: 9px;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(0,0,0,.18);
+            border: 1px solid rgba(255,255,255,.06);
+        }
+
+        .fintack-ai-source-card strong {
+            display: block;
+            color: #fff;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .fintack-ai-source-card span {
+            color: #8fa0b4;
+            font-size: 11px;
+        }
+
+        .fintack-ai-source-card a {
+            display: inline-block;
+            margin-top: 7px;
+            color: #73bdff;
+            font-size: 11px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .fintack-ai-suggestions {
+            display: flex;
+            gap: 7px;
+            overflow-x: auto;
+            padding: 0 16px 12px;
+            scrollbar-width: none;
+        }
+
+        .fintack-ai-suggestions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .fintack-ai-suggestion {
+            flex: 0 0 auto;
+            border: 1px solid rgba(115,189,255,.18);
+            border-radius: 999px;
+            background: rgba(115,189,255,.07);
+            color: #a9cdec;
+            padding: 8px 11px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .fintack-ai-input-area {
+            display: flex;
+            align-items: flex-end;
+            gap: 9px;
+            padding: 12px;
+            border-top: 1px solid rgba(255,255,255,.08);
+            background: #101824;
+        }
+
+        .fintack-ai-input {
+            flex: 1;
+            min-height: 44px;
+            max-height: 110px;
+            resize: none;
+            outline: none;
+            border: 1px solid rgba(255,255,255,.09);
+            border-radius: 15px;
+            background: #182231;
+            color: #fff;
+            padding: 12px 13px;
+            font: inherit;
+            font-size: 13px;
+        }
+
+        .fintack-ai-input::placeholder {
+            color: #718096;
+        }
+
+        .fintack-ai-send {
+            flex: 0 0 44px;
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: 14px;
+            background: #6dbaff;
+            color: #07111d;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .fintack-ai-send:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .fintack-ai-typing {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .fintack-ai-typing i {
+            width: 5px;
+            height: 5px;
+            display: block;
+            border-radius: 50%;
+            background: #90a1b5;
+            animation: fintackAITyping 1s infinite alternate;
+        }
+
+        .fintack-ai-typing i:nth-child(2) { animation-delay: .2s; }
+        .fintack-ai-typing i:nth-child(3) { animation-delay: .4s; }
+
+        @keyframes fintackAITyping {
+            from { opacity: .35; transform: translateY(1px); }
+            to { opacity: 1; transform: translateY(-2px); }
+        }
+
+        @media (min-width: 600px) {
+            .fintack-ai-overlay {
+                align-items: center;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+}
+
+function addFinTackAIMessage(role, message, extraHTML = "") {
+    const messages = document.getElementById("fintackAIMessages");
+    if (!messages) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = `fintack-ai-message ${role}`;
+
+    wrapper.innerHTML = `
+        <div class="fintack-ai-bubble">
+            ${escapeFinTackHTML(message)}
+            ${extraHTML}
+        </div>
+    `;
+
+    messages.appendChild(wrapper);
+    messages.scrollTop = messages.scrollHeight;
+
+    finTackAIConversation.push({
+        role,
+        message
+    });
+}
+
+function showFinTackAITyping() {
+    const messages = document.getElementById("fintackAIMessages");
+    if (!messages || document.getElementById("fintackAITyping")) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.id = "fintackAITyping";
+    wrapper.className = "fintack-ai-message assistant";
+    wrapper.innerHTML = `
+        <div class="fintack-ai-bubble">
+            <span class="fintack-ai-typing">
+                <i></i><i></i><i></i>
+            </span>
+        </div>
+    `;
+
+    messages.appendChild(wrapper);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function hideFinTackAITyping() {
+    document.getElementById("fintackAITyping")?.remove();
+}
+
+function extractStockSymbol(question) {
+    const upper = String(question || "").toUpperCase();
+
+    const knownCompanies = {
+        NVIDIA: "NVDA",
+        "NVIDIA CORPORATION": "NVDA",
+        APPLE: "AAPL",
+        MICROSOFT: "MSFT",
+        TESLA: "TSLA",
+        AMAZON: "AMZN",
+        META: "META",
+        GOOGLE: "GOOGL",
+        ALPHABET: "GOOGL",
+        AMD: "AMD",
+        INTEL: "INTC",
+        NETFLIX: "NFLX"
+    };
+
+    for (const [company, symbol] of Object.entries(knownCompanies)) {
+        if (upper.includes(company)) return symbol;
+    }
+
+    const symbolMatch = upper.match(
+        /\b(AAPL|NVDA|MSFT|TSLA|AMZN|META|GOOGL|GOOG|AMD|INTC|NFLX)\b/
+    );
+
+    return symbolMatch?.[1] || null;
+}
+
+function isNewsQuestion(question) {
+    const text = String(question || "").toLowerCase();
+
+    return [
+        "news",
+        "latest",
+        "headline",
+        "headlines",
+        "market",
+        "stock",
+        "stocks",
+        "nvidia",
+        "apple",
+        "microsoft",
+        "tesla",
+        "amazon",
+        "meta",
+        "google",
+        "amd",
+        "intel",
+        "netflix"
+    ].some(keyword => text.includes(keyword));
+}
+
+async function fetchFinTackNewsAnswer(question) {
+    const symbol = extractStockSymbol(question);
+
+    const endpoint = symbol
+        ? `${FINTACK_API_BASE}/news/company/${encodeURIComponent(symbol)}?days=7&limit=5`
+        : `${FINTACK_API_BASE}/news/market?category=general&limit=5`;
+
+    const response = await fetch(endpoint);
+
+    if (!response.ok) {
+        throw new Error(`News request failed (${response.status}).`);
+    }
+
+    const payload = await response.json();
+    const articles = Array.isArray(payload.articles)
+        ? payload.articles
+        : [];
+
+    if (!articles.length) {
+        return {
+            answer: symbol
+                ? `I couldn't find recent news for ${symbol} right now.`
+                : "I couldn't find recent market news right now.",
+            extraHTML: ""
+        };
+    }
+
+    const top = articles.slice(0, 3);
+
+    const answer = symbol
+        ? `Here are the latest stories I found for ${symbol}.`
+        : "Here are some of the latest market stories.";
+
+    const extraHTML = top.map(article => {
+        const title = escapeFinTackHTML(
+            article.headline || "Market update"
+        );
+        const source = escapeFinTackHTML(
+            article.source || "News source"
+        );
+        const url = escapeFinTackHTML(article.url || "#");
+
+        return `
+            <div class="fintack-ai-source-card">
+                <strong>${title}</strong>
+                <span>${source}</span>
+                ${article.url ? `
+                    <a href="${url}" target="_blank" rel="noopener noreferrer">
+                        Read article
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                ` : ""}
+            </div>
+        `;
+    }).join("");
+
+    return { answer, extraHTML };
+}
+
+async function fetchFinTackGeneralAIAnswer(question) {
+    /*
+        Your existing backend already exposes /api/ai/ask.
+        If the external AI provider is unavailable/quota-limited,
+        the user receives a clean error rather than breaking the UI.
+    */
+    const user = getFinTackAIUser();
+
+    const response = await fetch(`${FINTACK_API_BASE}/ai/ask`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: question,
+            user_id: user?.id || null
+        })
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok || payload.success === false) {
+        throw new Error(
+            payload.message ||
+            "FinTack AI is temporarily unavailable."
+        );
+    }
+
+    return (
+        payload.answer ||
+        payload.response ||
+        payload.message ||
+        "I received your question, but no response was returned."
+    );
+}
+
+async function submitFinTackAIQuestion(question) {
+    const cleanQuestion = String(question || "").trim();
+    if (!cleanQuestion) return;
+
+    const input = document.getElementById("fintackAIInput");
+    const sendButton = document.getElementById("fintackAISend");
+
+    if (input) input.value = "";
+    if (sendButton) sendButton.disabled = true;
+
+    addFinTackAIMessage("user", cleanQuestion);
+    showFinTackAITyping();
+
+    try {
+        if (isNewsQuestion(cleanQuestion)) {
+            const result =
+                await fetchFinTackNewsAnswer(cleanQuestion);
+
+            hideFinTackAITyping();
+
+            addFinTackAIMessage(
+                "assistant",
+                result.answer,
+                result.extraHTML
+            );
+        } else {
+            const answer =
+                await fetchFinTackGeneralAIAnswer(cleanQuestion);
+
+            hideFinTackAITyping();
+            addFinTackAIMessage("assistant", answer);
+        }
+    } catch (error) {
+        console.error("❌ Ask FinTack AI Error:", error);
+        hideFinTackAITyping();
+
+        addFinTackAIMessage(
+            "assistant",
+            isNewsQuestion(cleanQuestion)
+                ? "I couldn't load the latest market information right now. Please try again in a moment."
+                : "FinTack AI is temporarily unavailable. Please try again shortly."
+        );
+    } finally {
+        if (sendButton) sendButton.disabled = false;
+        input?.focus();
+    }
+}
+
+export function openFinTackAI(initialQuestion = "") {
+    ensureFinTackAIStyles();
+
+    document.getElementById("fintackAIOverlay")?.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "fintackAIOverlay";
+    overlay.className = "fintack-ai-overlay";
+
+    overlay.innerHTML = `
+        <section
+            class="fintack-ai-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ask FinTack AI"
+        >
+            <header class="fintack-ai-header">
+                <div class="fintack-ai-brand">
+                    <div class="fintack-ai-logo">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+
+                    <div>
+                        <h2>FinTack AI</h2>
+                        <p>Finance and market assistant</p>
+                    </div>
+                </div>
+
+                <button
+                    id="closeFinTackAI"
+                    class="fintack-ai-close"
+                    aria-label="Close FinTack AI"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </header>
+
+            <div
+                id="fintackAIMessages"
+                class="fintack-ai-messages"
+            ></div>
+
+            <div class="fintack-ai-suggestions">
+                <button class="fintack-ai-suggestion">
+                    Latest NVIDIA news
+                </button>
+
+                <button class="fintack-ai-suggestion">
+                    Latest market news
+                </button>
+
+                <button class="fintack-ai-suggestion">
+                    Explain SIP investing
+                </button>
+            </div>
+
+            <form
+                id="fintackAIForm"
+                class="fintack-ai-input-area"
+            >
+                <textarea
+                    id="fintackAIInput"
+                    class="fintack-ai-input"
+                    rows="1"
+                    placeholder="Ask FinTack AI anything..."
+                    aria-label="Ask FinTack AI"
+                ></textarea>
+
+                <button
+                    id="fintackAISend"
+                    class="fintack-ai-send"
+                    type="submit"
+                    aria-label="Send"
+                >
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
+            </form>
+        </section>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = "hidden";
+
+    finTackAIConversation = [];
+
+    addFinTackAIMessage(
+        "assistant",
+        "Hi! I'm FinTack AI. Ask me about stocks, market news, investing, or personal finance."
+    );
+
+    const close = () => {
+        overlay.remove();
+        document.body.style.overflow = "";
+    };
+
+    document
+        .getElementById("closeFinTackAI")
+        ?.addEventListener("click", close);
+
+    overlay.addEventListener("click", event => {
+        if (event.target === overlay) close();
+    });
+
+    document
+        .getElementById("fintackAIForm")
+        ?.addEventListener("submit", event => {
+            event.preventDefault();
+
+            submitFinTackAIQuestion(
+                document.getElementById("fintackAIInput")?.value
+            );
+        });
+
+    document
+        .getElementById("fintackAIInput")
+        ?.addEventListener("keydown", event => {
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+                event.preventDefault();
+
+                submitFinTackAIQuestion(event.currentTarget.value);
+            }
+        });
+
+    overlay
+        .querySelectorAll(".fintack-ai-suggestion")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                submitFinTackAIQuestion(button.textContent.trim());
+            });
+        });
+
+    const input = document.getElementById("fintackAIInput");
+    input?.focus();
+
+    if (initialQuestion.trim()) {
+        submitFinTackAIQuestion(initialQuestion);
+    }
+}
+
+export function initializeFinTackAI() {
+    if (finTackAIInitialized) return;
+
+    const trigger = getAskFinTackTrigger();
+
+    if (!trigger) {
+        console.warn(
+            "⚠️ Ask FinTack AI trigger was not found. " +
+            "Give the search bar id='ask-fintack-ai' if needed."
+        );
+        return;
+    }
+
+    finTackAIInitialized = true;
+
+    const clickable =
+        trigger.closest("form") ||
+        trigger.closest("button") ||
+        trigger;
+
+    if (clickable.tagName === "FORM") {
+        clickable.addEventListener("submit", event => {
+            event.preventDefault();
+
+            const field =
+                clickable.querySelector("input, textarea");
+
+            const question = field?.value?.trim() || "";
+
+            openFinTackAI(question);
+
+            if (field) field.value = "";
+        });
+    } else {
+        clickable.addEventListener("click", event => {
+            const field = trigger.matches?.("input, textarea")
+                ? trigger
+                : trigger.querySelector?.("input, textarea");
+
+            /*
+                Inputs should remain usable. Clicking/focusing an empty
+                search field opens the assistant, while entered text is
+                passed through as the first question.
+            */
+            event.preventDefault();
+
+            const question = field?.value?.trim() || "";
+            openFinTackAI(question);
+
+            if (field) field.value = "";
+        });
+    }
+
+    console.log("🤖 Ask FinTack AI initialized");
+}
+
+function scheduleFinTackAIInitialization() {
+    initializeFinTackAI();
+
+    /*
+        Some FinTack views are rendered dynamically. Retry briefly so the
+        AI bar can be discovered after the dashboard has finished loading.
+    */
+    if (!finTackAIInitialized) {
+        let attempts = 0;
+
+        const timer = window.setInterval(() => {
+            attempts += 1;
+            initializeFinTackAI();
+
+            if (finTackAIInitialized || attempts >= 10) {
+                window.clearInterval(timer);
+            }
+        }, 500);
+    }
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener(
+        "DOMContentLoaded",
+        scheduleFinTackAIInitialization
+    );
+} else {
+    scheduleFinTackAIInitialization();
+}

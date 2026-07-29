@@ -2631,3 +2631,156 @@ body {
             18px;
     }
 }
+/* =====================================================
+        FINTACK — DAILY STOCK NEWS
+===================================================== */
+
+#stock-container {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 0 14px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+
+#stock-container::-webkit-scrollbar {
+    display: none;
+}
+
+
+/* ================= NEWS CARD ================= */
+
+#stock-container .stock-news-card {
+    flex: 0 0 88%;
+    min-width: 88%;
+
+    background: #151e2c;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 15px;
+
+    padding: 12px;
+
+    scroll-snap-align: start;
+
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.16);
+}
+
+
+/* ================= IMAGE ================= */
+
+#stock-container .stock-news-card img {
+    float: left;
+
+    width: 82px !important;
+    height: 72px !important;
+
+    object-fit: cover;
+
+    border-radius: 9px !important;
+
+    margin:
+        0
+        11px
+        8px
+        0 !important;
+
+    background: #1d2838;
+}
+
+
+/* ================= HEADLINE ================= */
+
+#stock-container .stock-news-card h3 {
+    margin: 3px 0 6px !important;
+
+    color: #ffffff;
+
+    font-size: 14px !important;
+    font-weight: 700;
+    line-height: 1.35 !important;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+}
+
+
+/* ================= SUMMARY ================= */
+
+#stock-container .stock-news-card p {
+    clear: both;
+
+    margin: 10px 0 12px !important;
+
+    color: #98a5b5 !important;
+
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+}
+
+
+/* ================= META ================= */
+
+#stock-container .stock-news-card span {
+    font-size: 11px !important;
+}
+
+
+/* ================= READ MORE ================= */
+
+#stock-container .stock-news-card a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    color: #69b7ff !important;
+
+    font-size: 11px !important;
+    font-weight: 700;
+
+    text-decoration: none !important;
+}
+
+#stock-container .stock-news-card a:hover {
+    text-decoration: underline !important;
+}
+
+
+/* ================= SOURCE ================= */
+
+#stock-container .stock-news-card small {
+    color: #8794a5 !important;
+    font-size: 11px !important;
+}
+
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 600px) {
+
+    #stock-container {
+        gap: 10px;
+        padding-right: 25px;
+    }
+
+    #stock-container .stock-news-card {
+        flex: 0 0 86%;
+        min-width: 86%;
+    }
+
+    #stock-container .stock-news-card img {
+        width: 78px !important;
+        height: 68px !important;
+    }
+}
