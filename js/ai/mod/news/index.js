@@ -1,6 +1,7 @@
 import NewsIntent from "./newsIntent.js";
 import NewsDecision from "./newsDecision.js";
 import NewsManager from "./newsManager.js";
+import NewsFormatter from "./newsFormatter.js";
 
 const NewsModule = {
 
@@ -16,7 +17,7 @@ const NewsModule = {
 
     manager: new NewsManager(),
 
-    formatter: null
+    formatter: new NewsFormatter()
 
 };
 
