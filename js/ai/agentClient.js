@@ -5,9 +5,7 @@
    Drop this file into js/ai/ and import askAgent() from your chat UI.
    ========================================================================== */
 
-const API_BASE_URL = "http://localhost:5000/api";
-// For local development use:
-// const API_BASE_URL = "http://localhost:5000/api";
+import { API_BASE_URL } from "../core/config.js";
 
 /* =====================================================
             ASK THE AGENT
