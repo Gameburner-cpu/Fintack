@@ -6,7 +6,7 @@
    The base URL used to be hardcoded in eight different files, so pointing
    the app at a local backend meant editing all of them.
    Override at runtime from the console with:
-       localStorage.setItem("fintack_api_base", "http://localhost:5000");
+        localStorage.setItem("fintack_api_base", "http://localhost:5000");
 ========================================================================== */
 
 const DEFAULT_ORIGIN = "https://fintack.onrender.com";
@@ -16,22 +16,23 @@ function resolveOrigin() {
 
     if (override) return override.replace(/\/$/, "");
 
-    /* Running the frontend from a local server -> assume a local backend. */
     const host = window.location.hostname;
 
+    /* If running locally, allow local development overrides or fallback */
     if (host === "localhost" || host === "127.0.0.1") {
-        return localStorage.getItem("fintack_api_local") || DEFAULT_ORIGIN;
+        return localStorage.getItem("fintack_api_local") || "http://localhost:5000";
     }
 
+    /* For production environments like Netlify, force the live backend origin */
     return DEFAULT_ORIGIN;
 }
 
 export const API_ORIGIN = resolveOrigin();
 export const API_BASE_URL = `${API_ORIGIN}/api`;
 
-/* ==========================================================
+/* ==========================================================================
                         SESSION
-========================================================== */
+========================================================================== */
 
 export function getToken() {
     return localStorage.getItem("token");
@@ -51,13 +52,13 @@ export function clearSession() {
     localStorage.removeItem("currentChatId");
 }
 
-/* ==========================================================
-                    AUTHENTICATED FETCH
+/* ==========================================================================
+                        AUTHENTICATED FETCH
 
    Returns a normalised { ok, status, data } instead of throwing on
    non-2xx, so callers can surface the server's message rather than a
    generic "something went wrong".
-========================================================== */
+========================================================================== */
 
 export async function apiFetch(path, options = {}) {
     const url = path.startsWith("http")
@@ -128,7 +129,7 @@ export async function apiFetch(path, options = {}) {
     };
 }
 
-/* ==========================================================
+/* ==========================================================================
                 GLOBAL FETCH AUTHORISATION
 
    The app grew several modules that call fetch() directly (calendar, AI
@@ -139,7 +140,7 @@ export async function apiFetch(path, options = {}) {
    this wraps the global fetch once and attaches the token to any request
    aimed at the FinTack API. Requests to third-party origins are untouched,
    so the token never leaks off-origin.
-========================================================== */
+========================================================================== */
 
 function installFetchAuth() {
     /*
