@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4F9DFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <title>FinTack</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Professional Loading Placeholder Style */
+        .loading-value {
+            color: #7b8798;
+            font-weight: 700;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* --- AI CHAT SCROLL FIXES --- */
+        .ai-chat-window {
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh; /* Prevents modal from growing off-screen */
+            height: 100%;
+        }
+        
+        .ai-main-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden; /* Contains the children */
+        }
+        
+        .ai-chat-body {
+            flex: 1 1 auto; /* Tells the body to take up all remaining space */
+            overflow-y: auto; /* Enables vertical scrolling */
+            scroll-behavior: smooth;
+            padding-bottom: 15px; /* Adds breathing room at the bottom */
+        }
+
+        /* --- FINTACK STARTUP LOADER --- */
+        #fintack-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0d1117;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity .35s ease, visibility .35s ease;
+        }
+        #fintack-loader.loader-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .fintack-loader-content {
+            width: min(320px, 82vw);
+            text-align: center;
+        }
+        .fintack-loader-logo {
+            margin: 0;
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            color: #f8fafc;
+        }
+        .fintack-loader-tagline {
+            margin: 7px 0 24px;
+            color: #7b8798;
+            font-size: 12px;
+            letter-spacing: .7px;
+        }
+        .fintack-loader-spinner {
+            width: 38px;
+            height: 38px;
+            margin: 0 auto 16px;
+            border: 3px solid rgba(79, 157, 255, .18);
+            border-top-color: #4F9DFF;
+            border-radius: 50%;
+            animation: fintackLoaderSpin .75s linear infinite;
+        }
+        .fintack-loader-text {
+            margin: 0;
+            color: #9aa7b8;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        @keyframes fintackLoaderSpin {
+            to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .fintack-loader-spinner { animation-duration: 1.5s; }
+            #fintack-loader { transition: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==========================================
+                STARTUP LOADER
+=========================================== -->
+<div id="fintack-loader" role="status" aria-live="polite" aria-label="FinTack is loading">
+    <div class="fintack-loader-content">
+        <h1 class="fintack-loader-logo">FINTACK</h1>
+        <p class="fintack-loader-tagline">Financial Intelligence</p>
+        <div class="fintack-loader-spinner" aria-hidden="true"></div>
+        <p class="fintack-loader-text">Loading FinTack...</p>
+    </div>
+</div>
+
+
+<div class="app-container">
+
+    <!-- ==========================================
+                    LOGIN MODAL
+    =========================================== -->
+    <div id="login-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <i class="fa-solid fa-building-columns modal-logo"></i>
+            <h2>Welcome to FinTack</h2>
+            <p>Create your account or login to continue.</p>
+            
+            <form id="login-form" novalidate>
+                <!-- Hidden by default for Login -->
+                <input type="text" id="fullname" class="hidden" placeholder="Full Name"
+                       autocomplete="name">
+
+                <input type="email" id="email" placeholder="Email Address" required
+                       autocomplete="email" inputmode="email">
+                <input type="password" id="password" placeholder="Password" required
+                       autocomplete="current-password">
+
+                <p class="form-hint hidden" id="password-hint">
+                    At least 8 characters, including a letter and a number.
+                </p>
+
+                <p class="form-message hidden" id="auth-message" role="alert" aria-live="polite"></p>
+
+                <!-- Default button text set to Login -->
+                <button type="submit" class="btn-primary" id="auth-btn">Login</button>
+
+                <p class="auth-link" id="forgot-password-link" role="button" tabindex="0">
+                    Forgot password?
+                </p>
+
+                <!-- Default toggle text updated -->
+                <p id="switch-auth" style="margin-top:12px; text-align:center; cursor:pointer; color:#58a6ff;">
+                    Don't have an account? <strong>Create one</strong>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+                FORGOT PASSWORD
+    =========================================== -->
+    <div id="reset-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button type="button" class="modal-close" id="reset-close" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <i class="fa-solid fa-key modal-logo"></i>
+            <h2 id="reset-title">Reset your password</h2>
+            <p id="reset-subtitle">
+                Enter the email on your account and we'll send you a 6-digit code.
+            </p>
+
+            <!-- Step indicator -->
+            <ol class="reset-steps" id="reset-steps">
+                <li class="is-active" data-step="1"><span>1</span>Email</li>
+                <li data-step="2"><span>2</span>Code</li>
+                <li data-step="3"><span>3</span>New password</li>
+            </ol>
+
+            <p class="form-message hidden" id="reset-message" role="alert" aria-live="polite"></p>
+
+            <!-- Step 1: request the code -->
+            <form id="reset-request-form" class="reset-step" data-step="1" novalidate>
+                <input type="email" id="reset-email" placeholder="Email Address" required
+                       autocomplete="email" inputmode="email">
+                <button type="submit" class="btn-primary" id="reset-request-btn">
+                    Send code
+                </button>
+            </form>
+
+            <!-- Step 2: verify the OTP -->
+            <form id="reset-verify-form" class="reset-step hidden" data-step="2" novalidate>
+                <input type="text" id="reset-otp" placeholder="6-digit code" required
+                       inputmode="numeric" autocomplete="one-time-code"
+                       maxlength="6" pattern="[0-9]{6}" class="otp-input">
+
+                <p class="form-hint" id="reset-timer"></p>
+
+                <button type="submit" class="btn-primary" id="reset-verify-btn">
+                    Verify code
+                </button>
+
+                <p class="auth-link" id="reset-resend" role="button" tabindex="0">
+                    Resend code
+                </p>
+            </form>
+
+            <!-- Step 3: set the new password -->
+            <form id="reset-password-form" class="reset-step hidden" data-step="3" novalidate>
+                <input type="password" id="reset-new-password" placeholder="New password"
+                       required autocomplete="new-password">
+                <input type="password" id="reset-confirm-password" placeholder="Confirm new password"
+                       required autocomplete="new-password">
+
+                <p class="form-hint">
+                    At least 8 characters, including a letter and a number.
+                </p>
+
+                <button type="submit" class="btn-primary" id="reset-submit-btn">
+                    Update password
+                </button>
+            </form>
+
+            <p class="auth-link" id="reset-back" role="button" tabindex="0">
+                Back to login
+            </p>
+        </div>
+    </div>
+
+    <!-- ==========================================
+                    HEADER
+    =========================================== -->
+    <header class="top-header">
+        <div class="header-left" id="calendarButton">
+            <i class="fa-regular fa-calendar-days"></i>
+        </div>
+        <div class="header-center">
+            <h1 class="logo">FINTACK</h1>
+        </div>
+        <div
+            class="header-right notification-bell-button"
+            id="notificationButton"
+            role="button"
+            tabindex="0"
+            aria-label="Open notifications"
+        >
+            <i class="fa-regular fa-bell"></i>
+
+            <span
+                class="notification-badge hidden"
+                id="notificationBadge"
+            ></span>
+        </div>
+    </header>
+
+    <!-- ==========================================
+                    MAIN CONTENT
+    =========================================== -->
+    <main class="main-content">
+
+        <!-- ==========================================
+                        DASHBOARD PAGE
+        =========================================== -->
+        <section id="dashboard-page" class="view-section">
+            <h1>Dashboard</h1>
+
+            <!-- AI Insights -->
+            <section class="ai-dashboard">
+                <h2>🧠 AI Insights</h2>
+                <div id="ai-insights"></div>
+            </section>
+
+            <!-- Existing dashboard cards -->
+            <div class="dashboard-summary">
+                ...
+            </div>
+        </section>
+
+        <!-- ==========================================
+                        HOME PAGE
+        =========================================== -->
+        <section id="home-view" class="view-section active">
+            
+            <!-- AI Search -->
+            <div class="search-container">
+                <i
+                    id="ai-history-btn"
+                    class="fa-solid fa-wand-magic-sparkles">
+                </i>
+                <input class="ai-search" id="ai-search-input" type="text" placeholder="Ask FinTack AI anything...">
+            </div>
+
+            <!-- Quick Overview -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Net Worth</span>
+                    <strong class="stat-value loading-value" id="net-worth">--</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Monthly Saving</span>
+                    <strong class="stat-value loading-value" id="monthly-saving">--</strong>
+                </div>
+            </div>
+
+            <!-- Portfolio Card -->
+            <div class="results-dashboard">
+                <h3>Portfolio Overview</h3>
+                <div class="progress-bar">
+                    <div class="progress" id="goal-progress-bar" style="width:0%;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                    <span>Goal Progress</span>
+                    <strong id="goal-progress" class="loading-value">--%</strong>
+                </div>
+            </div>
+
+            <!-- Stock News -->
+            <section class="section">
+                <h2 class="section-title">DAILY STOCK NEWS</h2>
+                <div id="stock-container" class="horizontal-scroll"></div>
+            </section>
+
+            <!-- Recent Transactions -->
+            <section class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin-bottom: 0;">RECENT TRANSACTIONS</h2>
+                    <select id="transaction-filter" class="custom-select" style="width: auto; padding: 6px 12px; font-size: 13px;">
+                        <option value="10">Last 10 Days</option>
+                        <option value="30" selected>Last 1 Month</option>
+                        <option value="90">Last 3 Months</option>
+                        <option value="180">Last 6 Months</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+                <div id="transaction-container" class="vertical-list"></div>
+            </section>
+            
+        </section>
+
+        <!-- ==========================================
+                        GOALS PAGE
+        =========================================== -->
+        <section id="goals-view" class="view-section">
+            <div class="goals-header-container">
+                <h2 class="section-title">MY GOALS</h2>
+                <p class="section-subtitle">Track your financial goals and achieve them faster with AI planning.</p>
+                <button id="add-goal-btn" class="btn-primary">
+                    <i class="fa-solid fa-plus"></i> Add Goal
+                </button>
+            </div>
+
+            <!-- Overall Progress -->
+            <div class="results-dashboard">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span class="stat-label">Overall Progress</span>
+                        <h2 id="overall-progress-percent" class="loading-value" style="margin-top:5px;">--%</h2>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="stat-label">Active Goals</span>
+                        <h2 id="active-goals-count" class="loading-value" style="margin-top:5px;">--</h2>
+                    </div>
+                </div>
+                
+                <div class="progress-bar" style="margin-top:20px;">
+                    <div id="overall-progress-bar" class="progress" style="width:0%;"></div>
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                    <span id="overall-saved" class="loading-value">-- Saved</span>
+                    <span id="overall-target" class="loading-value">-- Target</span>
+                </div>
+            </div>
+
+            <!-- Goal Cards -->
+            <h3 class="section-title" style="font-size:18px;">Active Goals</h3>
+            <div id="goals-container" class="goals-grid"></div>
+
+            <!-- AI Recommendation -->
+
+            <div class="results-dashboard ai-recommendation">
+
+                <div class="ai-recommendation-header">
+                    <i class="fa-solid fa-robot"></i>
+                    <h3>AI Recommendation</h3>
+                </div>
+
+                <div
+                    class="ai-recommendation-content"
+                    id="ai-recommendation-text">
+                    Set up some financial goals to receive custom,
+                    optimized strategy plans from your AI assistant.
+                </div>
+
+                <button
+                    class="ai-optimize-btn" id="optimizeGoalPlanBtn">
+                         Optimize Plan
+                </button>
+
+            </div>
+
+            <!-- ==========================================
+                            GOAL PLANNER
+            =========================================== -->
+            <div id="goal-planner" class="sub-view hidden">
+                <div class="planner-inner-content">
+                    <div class="planner-header">
+                        <i class="fa-solid fa-chevron-left" id="close-planner"></i>
+                        <h2 id="planner-title">Goal Planner</h2>
+                    </div>
+                    
+                    <form id="planner-form">
+                        <div class="input-group">
+                            <label>Target Amount (₹)</label>
+                            <input id="plan-target" type="number" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Monthly Income (₹)</label>
+                            <input id="plan-income" type="number" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Duration</label>
+                            <select id="plan-duration" class="custom-select">
+                                <option value="3">3 Months</option>
+                                <option value="6">6 Months</option>
+                                <option value="12" selected>12 Months</option>
+                                <option value="18">18 Months</option>
+                                <option value="24">24 Months</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Generate Plan</button>
+                    </form>
+
+                    <div id="plan-results" class="results-dashboard hidden">
+                        <h3>Financial Strategy</h3>
+                        <div class="time-block">
+                            <h4>Daily</h4>
+                            <div class="result-row">
+                                <span>Save</span>
+                                <strong id="res-day-save" class="loading-value">--</strong>
+                            </div>
+                            <div class="result-row">
+                                <span>Spend</span>
+                                <strong id="res-day-spend" class="loading-value">--</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="time-block">
+                            <h4>Weekly</h4>
+                            <div class="result-row">
+                                <span>Save</span>
+                                <strong id="res-week-save" class="loading-value">--</strong>
+                            </div>
+                            <div class="result-row">
+                                <span>Spend</span>
+                                <strong id="res-week-spend" class="loading-value">--</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="time-block">
+                            <h4>Monthly</h4>
+                            <div class="result-row">
+                                <span>Save</span>
+                                <strong id="res-month-save" class="loading-value">--</strong>
+                            </div>
+                            <div class="result-row">
+                                <span>Spend</span>
+                                <strong id="res-month-spend" class="loading-value">--</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+                        ANALYSIS PAGE
+        =========================================== -->
+        <section id="analysis-view" class="view-section">
+            <div class="goals-header-container">
+                <h2 class="section-title">FINANCIAL ANALYSIS</h2>
+                <p class="section-subtitle">Monitor your financial performance with smart insights.</p>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Net Worth</span>
+                    <strong class="stat-value loading-value" id="analysis-networth">--</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Investments</span>
+                    <strong class="stat-value loading-value" id="analysis-investments">--</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Savings</span>
+                    <strong class="stat-value loading-value" id="analysis-savings">--</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Expenses</span>
+                    <strong class="stat-value loading-value" id="analysis-expenses" style="color:var(--negative-red);">--</strong>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="placeholder-card">
+                <h3>Monthly Expense Trend</h3>
+                <canvas id="expenseChart" height="180"></canvas>
+            </div>
+            
+            <div class="placeholder-card">
+                <h3>Portfolio Allocation</h3>
+                <canvas id="portfolioChart" height="220"></canvas>
+            </div>
+            
+            <div class="placeholder-card">
+                <h3>Income vs Expenses</h3>
+                <canvas id="incomeChart" height="200"></canvas>
+            </div>
+
+            <!-- Spending Categories (Placeholders pending DB integration) -->
+            <div class="results-dashboard">
+                <h3>Spending Categories</h3>
+                <div id="spending-categories-container" class="loading-value">
+                    Loading category breakdown...
+                </div>
+            </div>
+
+            <!-- AI Score -->
+            <div class="results-dashboard">
+                <h3><i class="fa-solid fa-brain"></i> AI Financial Health</h3>
+                <div style="text-align:center;padding:15px 0;">
+                    <h1 id="ai-health-score" class="loading-value" style="font-size:72px; color:var(--accent-blue); margin-bottom:10px;">--</h1>
+                    <h3 id="ai-health-status" class="loading-value">Analyzing...</h3>
+                    <p class="results-intro" id="ai-health-message">Generating insights based on your recent ledger activity.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+                        PROFILE PAGE
+        =========================================== -->
+        <section id="profile-view" class="view-section">
+            <div class="goals-header-container">
+                <h2 class="section-title">MY PROFILE</h2>
+                <p class="section-subtitle">Your financial journey at a glance.</p>
+            </div>
+
+            <!-- User Card -->
+            <div class="placeholder-card user-info">
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                <h2 id="profile-name" class="loading-value">Loading...</h2>
+                <p id="profile-tier" class="loading-value">--</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Monthly Income</span>
+                    <strong id="profile-income" class="stat-value loading-value">--</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Monthly Saving</span>
+                    <strong id="profile-saving" class="stat-value loading-value">--</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Goals</span>
+                    <strong id="profile-goals" class="stat-value loading-value">--</strong>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Reports</span>
+                    <strong id="profile-reports" class="stat-value loading-value">--</strong>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="results-dashboard">
+                <h3>Achievements</h3>
+                <div id="achievements-container" class="loading-value">
+                    Loading achievements...
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="pill-menu">
+
+                <button class="pill-btn" id="btn-expenses">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-wallet"></i> Expenses & Budget
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                
+
+                <button class="pill-btn">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-download"></i> Export Data
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                <button class="pill-btn danger" id="logout-btn">
+                    <div class="pill-left">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </div>
+                </button>
+
+            </div>
+
+            <!-- Budget Manager -->
+            <div id="expenses-manager" class="sub-view hidden">
+                <div class="planner-inner-content">
+                    <div class="planner-header">
+                        <i class="fa-solid fa-chevron-left" id="close-expenses"></i>
+                        <h2>Budget Manager</h2>
+                    </div>
+                    
+                    <form id="budget-setup-form" class="placeholder-form">
+                        <div class="input-group">
+                            <label>Monthly Income</label>
+                            <input id="budget-income" type="number">
+                        </div>
+                        <div class="input-group">
+                            <label>Monthly Savings</label>
+                            <input id="budget-savings" type="number">
+                        </div>
+                        <button type="submit" class="btn-primary">Save Budget</button>
+                    </form>
+
+                    <div class="results-dashboard" style="margin-top:20px;">
+                        <h3>Budget Overview</h3>
+                        <div class="progress-bar">
+                            <div id="budget-progress-fill" class="progress" style="width:0%;"></div>
+                        </div>
+                        
+                        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                            <span>Used</span>
+                            <strong id="budget-percent" class="loading-value">--%</strong>
+                        </div>
+
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <span class="stat-label">Spent</span>
+                                <strong id="month-spent" class="stat-value loading-value">--</strong>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">Remaining</span>
+                                <strong id="month-remaining" class="stat-value loading-value">--</strong>
+                            </div>
+                            <div class="stat-box full-width">
+                                <span class="stat-label">Daily Allowance</span>
+                                <strong id="daily-allowance" class="stat-value loading-value">--</strong>
+                            </div>
+                        </div>
+
+                        <h4 style="margin-top:20px;">Today's Transactions</h4>
+                        <div id="todays-transactions" class="transaction-list"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==========================================
+                    BOTTOM NAVIGATION
+    =========================================== -->
+    <nav class="bottom-nav">
+        <!-- Home -->
+        <a href="#" class="nav-item active" data-target="home-view">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </a>
+
+        <!-- Goals -->
+        <a href="#" class="nav-item" data-target="goals-view">
+            <i class="fa-solid fa-bullseye"></i>
+            <span>Goals</span>
+        </a>
+
+        <!-- Floating Action Button -->
+        <div class="nav-item add-button-container" id="fab-container">
+            <!-- Floating Menu -->
+            <div class="fab-menu" id="fab-menu">
+                <!-- Add Income -->
+                <button class="fab-item income" id="fab-income">
+                    <span class="fab-label">Add Income</span>
+                    <i class="fa-solid fa-money-bill-trend-up"></i>
+                </button>
+                <!-- Add Expense -->
+                <button class="fab-item expense" id="fab-expense">
+                    <span class="fab-label">Add Expense</span>
+                    <i class="fa-solid fa-arrow-trend-down"></i>
+                </button>
+            </div>
+            
+            <!-- Main FAB -->
+            <button class="add-button" id="main-add-btn">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </div>
+
+        <!-- Analysis -->
+        <a href="#" class="nav-item" data-target="analysis-view">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Analysis</span>
+        </a>
+
+        <!-- Profile -->
+        <a href="#" class="nav-item" data-target="profile-view">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+</div>
+
+<!-- ==========================================
+                TRANSACTION MODAL
+=========================================== -->
+<div id="transaction-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <button type="button" class="modal-close" id="transaction-close" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h2 id="transaction-title-text">Add Transaction</h2>
+
+        <form id="transaction-form" novalidate>
+            <input type="text" id="transaction-name" placeholder="Transaction Title" required
+                   maxlength="120">
+            <input type="number" id="transaction-amount" placeholder="Amount (₹)" required
+                   min="0.01" step="0.01" inputmode="decimal">
+            <select id="transaction-category" required>
+                <option value="" disabled selected>Select Category</option>
+                <option value="Food">Food</option>
+                <option value="Fuel">Fuel</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Bills">Bills</option>
+                <option value="Travel">Travel</option>
+                <option value="Health">Health</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Education">Education</option>
+                <option value="Salary">Salary</option>
+                <option value="Investment">Investment</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="date" id="transaction-date" required>
+
+            <p class="form-message hidden" id="transaction-message" role="alert" aria-live="polite"></p>
+
+            <button type="submit" class="btn-primary">Save Transaction</button>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+            EDIT TRANSACTION MODAL
+=========================================== -->
+<div id="edit-transaction-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <button type="button" class="modal-close" id="edit-transaction-close" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h2>Edit Transaction</h2>
+
+        <form id="edit-transaction-form" novalidate>
+            <div class="type-toggle" role="radiogroup" aria-label="Transaction type">
+                <button type="button" class="type-toggle__option" data-type="expense"
+                        role="radio" aria-checked="true">
+                    <i class="fa-solid fa-arrow-trend-down"></i> Expense
+                </button>
+                <button type="button" class="type-toggle__option" data-type="income"
+                        role="radio" aria-checked="false">
+                    <i class="fa-solid fa-arrow-trend-up"></i> Income
+                </button>
+            </div>
+
+            <input type="hidden" id="edit-transaction-id">
+            <input type="hidden" id="edit-transaction-type" value="expense">
+
+            <label class="field-label" for="edit-transaction-name">Title</label>
+            <input type="text" id="edit-transaction-name" placeholder="Transaction Title"
+                   required maxlength="120">
+
+            <label class="field-label" for="edit-transaction-amount">Amount (₹)</label>
+            <input type="number" id="edit-transaction-amount" placeholder="Amount (₹)"
+                   required min="0.01" step="0.01" inputmode="decimal">
+
+            <label class="field-label" for="edit-transaction-category">Category</label>
+            <select id="edit-transaction-category" required></select>
+
+            <label class="field-label" for="edit-transaction-date">Date</label>
+            <input type="date" id="edit-transaction-date" required>
+
+            <label class="field-label" for="edit-transaction-description">Note (optional)</label>
+            <input type="text" id="edit-transaction-description"
+                   placeholder="Add a note" maxlength="500">
+
+            <p class="form-message hidden" id="edit-transaction-message" role="alert" aria-live="polite"></p>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-danger" id="edit-transaction-delete">
+                    <i class="fa-solid fa-trash"></i> Delete
+                </button>
+                <button type="submit" class="btn-primary" id="edit-transaction-save">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+                EDIT GOAL MODAL
+=========================================== -->
+<div id="edit-goal-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h2>Edit Goal</h2>
+        <form id="edit-goal-form">
+            <input type="text" id="edit-goal-title" placeholder="Goal Title" required>
+            <input type="number" id="edit-goal-target" placeholder="Target Amount" required>
+            <input type="date" id="edit-goal-deadline" required>
+            <button type="submit" class="btn-primary">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+                ADD SAVINGS MODAL
+=========================================== -->
+<div id="savings-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h2>Add Savings</h2>
+        <form id="savings-form">
+            <input type="number" id="saving-amount" placeholder="Amount" required>
+            <button type="submit" class="btn-primary">Add Savings</button>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+                ADD GOAL MODAL
+=========================================== -->
+<div id="goal-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h2>Add New Goal</h2>
+        <form id="goal-form">
+            <input type="text" id="goal-title" placeholder="Goal Title" required>
+            <input type="number" id="goal-target" placeholder="Target Amount (₹)" required>
+            <input type="date" id="goal-deadline" required>
+            <button type="submit" class="btn-primary">Create Goal</button>
+        </form>
+    </div>
+</div>
+
+<!-- ==========================================
+                AI CHAT MODAL
+========================================== -->
+<div id="ai-chat-modal" class="modal-overlay hidden">
+    <div class="ai-chat-window">
+
+
+
+        <!-- ================= MAIN CHAT ================= -->
+        <div class="ai-main-panel">
+            <div class="ai-chat-header">
+                <div class="ai-header-info">
+                    <i class="fa-solid fa-robot"></i>
+                    <div>
+                        <h3>FinTack AI</h3>
+                        <span>Financial Assistant</span>
+                    </div>
+                </div>
+                <button
+                    id="close-ai-chat"
+                    class="ai-close-btn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="ai-chat-body" class="ai-chat-body">
+                <div class="ai-message">
+                    👋 Hello!, What's on you mind today?
+                </div>
+            </div>
+
+            <div class="ai-chat-footer">
+                <input
+                    id="ai-chat-input"
+                    type="text"
+                    placeholder="Ask anything..."
+                >
+                <button id="ai-send-btn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ==========================================
+            AI HISTORY MODAL
+========================================== -->
+
+<div id="ai-history-modal" class="modal-overlay hidden">
+    <div class="ai-history-window">
+        <div class="ai-history-header">
+            <h2>Conversations</h2>
+            <button
+                id="close-history"
+                class="ai-close-btn">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <button
+            id="new-chat-btn"
+            class="btn-primary">
+            <i class="fa-solid fa-plus"></i>
+                New Chat
+        </button>
+
+        <div
+            id="history-list"
+            class="history-list">
+            <div class="history-empty">
+                No conversations yet.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+                    NOTIFICATION OVERLAY
+========================================================== -->
+
+<div
+    id="notificationOverlay"
+    class="notification-overlay hidden"
+>
+
+    <div
+        class="notification-modal"
+        id="notificationModal"
+    >
+
+        <!-- ================= HEADER ================= -->
+        <div class="notification-modal-header">
+            <div class="notification-header-left">
+                <div class="notification-header-icon">
+                    <i class="fa-regular fa-bell"></i>
+                </div>
+                <div>
+                    <h2>Notifications</h2>
+                    <p>Your financial updates</p>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="notification-close"
+                id="notificationClose"
+                aria-label="Close notifications">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+
+        <!-- ================= TOOLBAR ================= -->
+
+        <div class="notification-toolbar">
+
+            <div class="notification-toolbar-title">
+                Recent
+            </div>
+            <button
+                type="button"
+                class="notification-mark-all"
+                id="notificationMarkAll">
+                Mark all as read
+            </button>
+        </div>
+
+
+        <!-- ================= LIST ================= -->
+
+        <div
+            class="notification-list"
+            id="notificationList">
+            <!-- NotificationUI.js renders here -->
+
+            <div class="notification-empty">
+                <div class="notification-empty-icon">
+                    <i class="fa-regular fa-bell"></i>
+                </div>
+                <h3>No notifications</h3>
+                <p>
+                    Your financial updates will appear here.
+                </p>
+            </div>
+        </div>
+
+
+        <!-- ================= FOOTER ================= -->
+
+        <div class="notification-footer">
+            <button
+                type="button"
+                id="notificationClearAll"
+                class="notification-clear-all">
+                <i class="fa-regular fa-trash-can"></i>
+                Clear notifications
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="module" src="js/core/app.js"></script>
+
+
+<script>
+(function () {
+    const loader = document.getElementById("fintack-loader");
+    const startedAt = performance.now();
+    const minimumVisibleTime = 700; // Keeps it on screen for at least 0.7s to prevent flashing
+    const maximumVisibleTime = 15000; // Safety fallback (15 seconds)
+    let hidden = false;
+
+    // Attach the function to the window object so app.js can call it
+    window.hideFinTackLoader = function() {
+        if (!loader || hidden) return;
+        hidden = true;
+
+        const elapsed = performance.now() - startedAt;
+        const remaining = Math.max(0, minimumVisibleTime - elapsed);
+
+        window.setTimeout(() => {
+            loader.classList.add("loader-hidden");
+            window.setTimeout(() => loader.remove(), 400);
+        }, remaining);
+    };
+
+    // Safety fallback: never leave the user trapped behind the loader if JS errors out.
+    window.setTimeout(window.hideFinTackLoader, maximumVisibleTime);
+})();
+</script>
+
+</body>
+</html>

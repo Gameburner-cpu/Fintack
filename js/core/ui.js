@@ -1,0 +1,1797 @@
+import { API_ORIGIN } from "./config.js";
+/* ==========================================================================
+   js/ui.js - Handles DOM manipulation and rendering data to the screen
+========================================================================== */
+import GoalPlanner from "../ai/mod/goals/goalPlanner.js";
+
+/* =====================================================
+                RENDER STOCKS
+===================================================== */
+export function renderStocks(stocks) {
+    const container = document.getElementById('stock-container');
+    if (!container) return;
+
+    container.innerHTML = stocks.map(stock => {
+        const changeBg = stock.isPositive ? 'var(--positive-green)' : 'var(--negative-red)';
+        const changeColor = stock.isPositive ? '#000' : '#fff';
+        
+        return `
+            <div class="stock-card">
+                <div class="stock-header">
+                    <span class="stock-ticker">${stock.ticker}</span>
+                    <span class="stock-change" style="background: ${changeBg}; color: ${changeColor}">
+                        ${stock.change}
+                    </span>
+                </div>
+                <div class="stock-price">${stock.price}</div>
+                <div class="stock-desc">${stock.description}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+/* =====================================================
+                RENDER NEWS
+===================================================== */
+export function renderNews(newsList) {
+    const container = document.getElementById('news-container');
+    if (!container) return;
+
+    const getImage = (index) => {
+        const images = [
+            'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80'
+        ];
+        return images[index % images.length];
+    };
+
+    container.innerHTML = newsList.map((news, index) => `
+        <div class="news-card">
+            <div class="news-image" style="background-image: url('${getImage(index)}');"></div>
+            <div class="news-content">
+                <div class="news-category"><i class="${news.icon}"></i> ${news.category}</div>
+                <div class="news-title">${news.title}</div>
+                <div class="news-excerpt">${news.excerpt}</div>
+                <div class="news-footer">
+                    <span>${news.time}</span>
+                    <i class="fa-regular fa-bookmark" style="cursor: pointer;"></i>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+/* =====================================================
+                RENDER TRANSACTIONS
+===================================================== */
+export function renderTransactions(transactions) {
+    const container = document.getElementById("transaction-container");
+    if (!container) return;
+
+    if (!transactions || transactions.length === 0) {
+        container.innerHTML = `
+            <div class="news-card">
+                <div class="news-content">
+                    <h3>No Transactions Yet</h3>
+                    <p>Add your first income or expense.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    /*
+        Rows are rendered as buttons carrying data-transaction-id. app.js
+        binds a single delegated listener on the container instead of one
+        listener per row, so a 2,000 row list still opens instantly.
+    */
+    container.innerHTML = transactions.map(transaction => {
+        const isIncome = transaction.type === "income";
+        const amountClass = isIncome ? "is-income" : "is-expense";
+        const amountPrefix = isIncome ? "+" : "-";
+
+        const date = new Date(transaction.date);
+
+        const dateLabel = Number.isNaN(date.getTime())
+            ? ""
+            : date.toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric"
+            });
+
+        return `
+            <article class="transaction-card">
+                <div class="transaction-card__main">
+                    <div class="transaction-card__info">
+                        <h3>${escapeHtml(transaction.title)}</h3>
+                        <small>
+                            <span class="transaction-card__chip">${escapeHtml(transaction.category)}</span>
+                            ${escapeHtml(dateLabel)}
+                        </small>
+                        ${
+                            transaction.description
+                                ? `<p class="transaction-card__note">${escapeHtml(transaction.description)}</p>`
+                                : ""
+                        }
+                    </div>
+
+                    <div class="transaction-card__side">
+                        <strong class="transaction-card__amount ${amountClass}">
+                            ${amountPrefix}₹${Number(transaction.amount).toLocaleString("en-IN")}
+                        </strong>
+
+                        <button
+                            type="button"
+                            class="transaction-card__edit"
+                            data-transaction-id="${escapeHtml(transaction.id)}"
+                            aria-label="Edit ${escapeHtml(transaction.title)}"
+                            title="Edit transaction"
+                        >
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+                </div>
+            </article>
+        `;
+    }).join("");
+}
+
+/* =====================================================
+        HTML ESCAPING
+
+   Transaction titles and categories are user input. Before this they went
+   straight into innerHTML, so a title containing markup could inject it
+   into the page.
+===================================================== */
+export function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+/* =====================================================
+                UPDATE DASHBOARD
+===================================================== */
+export function updateDashboard(summary) {
+    /*
+        Cache the same monthly income/expense values already calculated
+        by the dashboard. The Goal Planner uses this exact data so the
+        Optimize Plan modal never falls back to ₹0 unless the user
+        genuinely has no monthly income/savings capacity.
+    */
+    if (summary) {
+        currentFinancialData = {
+            monthlyIncome: Number(
+                summary.monthlyIncome ??
+                summary.income ??
+                0
+            ) || 0,
+
+            monthlyExpense: Number(
+                summary.monthlyExpense ??
+                summary.monthlyExpenses ??
+                summary.expenses ??
+                0
+            ) || 0
+        };
+    }
+
+    const netWorth = document.getElementById("net-worth");
+    const monthlySaving = document.getElementById("monthly-saving");
+    const goalText = document.getElementById("goal-progress");
+    const goalBar = document.getElementById("goal-progress-bar");
+
+    if (netWorth) {
+        netWorth.textContent = "₹" + (Number(summary.netWorth) || 0).toLocaleString();
+    }
+
+    if (monthlySaving) {
+        monthlySaving.textContent = "₹" + (Number(summary.monthlySavings) || 0).toLocaleString();
+    }
+
+    /*
+        This compared the CURRENT MONTH's savings against ALL-TIME income,
+        so the savings-rate ring showed a number close to zero for anyone
+        with more than a couple of months of history. Both sides of the
+        ratio now come from the same month.
+    */
+    const monthlyIncome = Number(
+        summary.monthlyIncome ?? summary.income ?? 0
+    );
+
+    const monthlySavings = Number(summary.monthlySavings) || 0;
+
+    const progress = monthlyIncome > 0
+        ? Math.round((monthlySavings / monthlyIncome) * 100)
+        : 0;
+
+    if (goalText) goalText.textContent = progress + "%";
+
+    /* Clamp so a windfall month cannot overflow the progress bar. */
+    if (goalBar) {
+        goalBar.style.width = Math.max(0, Math.min(100, progress)) + "%";
+    }
+}
+
+/* =====================================================
+        UPDATE AI GOAL RECOMMENDATIONS
+===================================================== */
+export function updateAIRecommendations(goals) {
+    // Keep the latest rendered goals available to the optimization modal.
+    currentRenderedGoals = Array.isArray(goals) ? goals : [];
+
+    const recommendationTextEl = document.getElementById("ai-recommendation-text");
+
+    if (!recommendationTextEl) return;
+
+    // No goals yet
+    if (!goals || goals.length === 0) {
+        recommendationTextEl.innerHTML =
+            "Create your first financial goal above, and FinTack AI will calculate a savings plan for you.";
+        return;
+    }
+
+    // Create a smart plan for every active goal
+    const goalPlans = goals.map(goal => {
+        const plan = GoalPlanner.createSmartPlan(
+            goal,
+            currentFinancialData
+        );
+        return {
+            goal,
+            plan
+        };
+    });
+
+    console.log(
+        "🎯 FinTack All Goal Plans:",
+        goalPlans
+    );
+
+    // Keep only valid active plans
+    const activePlans = goalPlans.filter(item =>
+        item.plan &&
+        item.plan.success &&
+        item.plan.status === "active"
+    );
+
+    // Check whether every goal is already completed
+    if (activePlans.length === 0) {
+        const allCompleted = goalPlans.every(
+            item => item.plan?.status === "completed"
+        );
+
+        if (allCompleted) {
+            recommendationTextEl.innerHTML = `
+                🎉 Congratulations! All your financial goals
+                have been achieved.
+            `;
+        } else {
+            recommendationTextEl.innerHTML = `
+                FinTack couldn't calculate an active savings plan.
+                Please check your goal amounts and deadlines.
+            `;
+        }
+        return;
+    }
+
+    // Calculate combined saving requirement
+    const totalDaily = activePlans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.daily) || 0),
+        0
+    );
+    
+    const totalWeekly = activePlans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.weekly) || 0),
+        0
+    );
+    
+    const totalMonthly = activePlans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.monthly) || 0),
+        0
+    );
+
+    // Build compact individual goal breakdown
+    const goalBreakdown = activePlans.map(item => {
+        const goal = item.goal;
+        const plan = item.plan;
+        const monthly = Number(plan.required?.monthly) || 0;
+
+        return `
+            <div class="ai-goal-plan-item">
+                <strong>${goal.title}</strong>
+                <span>
+                    ₹${monthly.toLocaleString("en-IN")}/month
+                </span>
+            </div>
+        `;
+    }).join("");
+
+    // Render combined AI recommendation
+    recommendationTextEl.innerHTML = `
+        <div class="ai-goal-summary">
+            <div class="ai-goal-summary-title">
+                ${activePlans.length} Active Goal${activePlans.length > 1 ? "s" : ""}
+            </div>
+
+            <div class="ai-goal-breakdown">
+                ${goalBreakdown}
+            </div>
+
+            <div class="ai-goal-total">
+                <span>Total Required</span>
+                <strong>
+                    ₹${totalMonthly.toLocaleString("en-IN")} / month
+                </strong>
+            </div>
+
+            <div class="ai-goal-frequency">
+                ₹${totalDaily.toLocaleString("en-IN")}/day • ₹${totalWeekly.toLocaleString("en-IN")}/week
+            </div>
+        </div>
+    `;
+}
+
+/* =====================================================
+                RENDER GOALS
+===================================================== */
+export function renderGoals(goals) {
+    const container = document.getElementById("goals-container");
+    if (!container) return;
+
+    // Trigger the dynamic recommendation engine 
+    updateAIRecommendations(goals);
+
+    if (!goals || goals.length === 0) {
+        container.innerHTML = `
+            <div class="news-card">
+                <div class="news-content">
+                    <h3>No Goals Yet</h3>
+                    <p>Create your first financial goal.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = goals.map(goal => {
+        const targetAmount = Number(goal.target_amount) || 0;
+        const savedAmount = Number(goal.saved_amount) || 0;
+        const progress = targetAmount > 0 
+            ? Math.min(Math.round((savedAmount / targetAmount) * 100), 100) 
+            : 0;
+
+        return `
+            <div class="goal-card">
+                <div class="goal-icon-wrapper">
+                    <i class="fa-solid fa-bullseye"></i>
+                </div>
+                <div class="goal-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>${goal.title}</h3>
+                        <strong style="color:#7bbcff;">${progress}%</strong>
+                    </div>
+                    
+                    <p class="goal-description">
+                        Deadline: ${new Date(goal.deadline).toLocaleDateString()}
+                    </p>
+                    
+                    <div class="goal-meta">
+                        <span class="goal-badge">
+                            ₹${savedAmount.toLocaleString()} / ₹${targetAmount.toLocaleString()}
+                        </span>
+                    </div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress" style="width:${progress}%"></div>
+                    </div>
+                    
+                    <div class="goal-actions">
+                        <button class="goal-save-btn" data-id="${goal.id}">
+                            <i class="fa-solid fa-plus"></i> Add Savings
+                        </button>
+                        <button class="small-btn edit-goal-btn" data-id="${goal.id}">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="small-btn delete-goal-btn" data-id="${goal.id}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+/* =====================================================
+                UPDATE GOAL SUMMARY
+===================================================== */
+export function updateGoalSummary(goals) {
+    const totalSaved = goals.reduce((sum, goal) => sum + (Number(goal.saved_amount) || 0), 0);
+    const totalTarget = goals.reduce((sum, goal) => sum + (Number(goal.target_amount) || 0), 0);
+    const progress = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
+
+    const progressPercentEl = document.getElementById("overall-progress-percent");
+    const activeGoalsCountEl = document.getElementById("active-goals-count");
+    const overallSavedEl = document.getElementById("overall-saved");
+    const overallTargetEl = document.getElementById("overall-target");
+    const overallProgressBarEl = document.getElementById("overall-progress-bar");
+
+    if (progressPercentEl) progressPercentEl.textContent = progress + "%";
+    if (activeGoalsCountEl) activeGoalsCountEl.textContent = goals.length;
+    if (overallSavedEl) overallSavedEl.textContent = "₹" + totalSaved.toLocaleString() + " Saved";
+    if (overallTargetEl) overallTargetEl.textContent = "₹" + totalTarget.toLocaleString() + " Target";
+    if (overallProgressBarEl) overallProgressBarEl.style.width = progress + "%";
+}
+/* =========================================================
+   OPTIMIZE GOAL PLAN
+========================================================= */
+/*
+    Keep the latest goals rendered by the Goals screen available
+    to the optimization modal. This avoids duplicating goal storage
+    logic inside the modal.
+*/
+let currentRenderedGoals = [];
+let currentFinancialData = {
+    monthlyIncome: 0,
+    monthlyExpense: 0
+};
+
+/*
+    NOTE:
+    renderGoals() calls updateAIRecommendations(goals), so the modal can
+    safely obtain the latest goals from the DOM-independent cache below.
+*/
+function getOptimizationGoals() {
+    return Array.isArray(currentRenderedGoals) ? currentRenderedGoals : [];
+}
+
+document.addEventListener("click", (event) => {
+    const optimizeButton = event.target.closest("#optimizeGoalPlanBtn");
+    if (!optimizeButton) return;
+
+    console.log("🎯 Optimize Plan clicked");
+    openGoalOptimizationPlan();
+});
+
+function formatINR(value) {
+    const amount = Number(value) || 0;
+    return "₹" + Math.round(amount).toLocaleString("en-IN");
+}
+
+function calculateGoalOptimization(goals) {
+    const plans = goals
+        .map(goal => ({
+            goal,
+            plan: GoalPlanner.createSmartPlan(
+                goal,
+                currentFinancialData
+            )
+        }))
+        .filter(item =>
+            item.plan &&
+            item.plan.success &&
+            item.plan.status === "active"
+        );
+
+    const totalMonthly = plans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.monthly) || 0),
+        0
+    );
+
+    const totalWeekly = plans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.weekly) || 0),
+        0
+    );
+
+    const totalDaily = plans.reduce(
+        (sum, item) => sum + (Number(item.plan.required?.daily) || 0),
+        0
+    );
+
+    /*
+        GoalPlanner may expose affordability data. Use it when present.
+        If it is unavailable, the modal still shows the deadline-based
+        savings requirements without inventing financial capacity.
+    */
+    const capacities = plans
+        .map(item => Number(item.plan.affordability?.availableMonthlySavings))
+        .filter(Number.isFinite);
+
+    const availableMonthly =
+        capacities.length > 0 ? Math.max(...capacities) : null;
+
+    const shortfall =
+        availableMonthly === null
+            ? null
+            : Math.max(totalMonthly - availableMonthly, 0);
+
+    const affordable =
+        availableMonthly === null
+            ? null
+            : totalMonthly <= availableMonthly;
+
+    /*
+        Allocate available monthly savings proportionally across goals
+        when the deadline requirements exceed capacity. Otherwise each
+        goal receives its full required monthly amount.
+    */
+    const optimizedGoals = plans.map(item => {
+        const requiredMonthly =
+            Number(item.plan.required?.monthly) || 0;
+
+        let recommendedMonthly = requiredMonthly;
+
+        if (
+            availableMonthly !== null &&
+            totalMonthly > availableMonthly &&
+            totalMonthly > 0
+        ) {
+            recommendedMonthly =
+                availableMonthly *
+                (requiredMonthly / totalMonthly);
+        }
+
+        return {
+            goal: item.goal,
+            plan: item.plan,
+            requiredMonthly,
+            recommendedMonthly
+        };
+    });
+
+    return {
+        plans,
+        optimizedGoals,
+        totalMonthly,
+        totalWeekly,
+        totalDaily,
+        availableMonthly,
+        shortfall,
+        affordable
+    };
+}
+
+function renderGoalOptimizationResult(content, result) {
+    if (!content) return;
+
+    if (!result.plans.length) {
+        content.innerHTML = `
+            <div class="optimization-empty">
+                <i class="fa-solid fa-circle-info"></i>
+                <h3>No active goals to optimize</h3>
+                <p>Create an active financial goal with a valid target amount and a future deadline first.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const goalRows = result.optimizedGoals.map(item => {
+        const deadline = item.goal.deadline
+            ? new Date(item.goal.deadline).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            })
+            : "No deadline";
+
+        const allocationChanged =
+            Math.round(item.recommendedMonthly) !== Math.round(item.requiredMonthly);
+
+        return `
+            <div class="optimization-goal-item">
+                <div class="optimization-goal-top">
+                    <div>
+                        <strong>${item.goal.title}</strong>
+                        <span>Target deadline: ${deadline}</span>
+                    </div>
+                    <strong class="optimization-goal-required">
+                        ${formatINR(item.requiredMonthly)}/month
+                    </strong>
+                </div>
+
+                ${allocationChanged ? `
+                    <div class="optimization-goal-allocation">
+                        <span>Recommended contribution</span>
+                        <strong>${formatINR(item.recommendedMonthly)}/month</strong>
+                    </div>
+                ` : ""}
+            </div>
+        `;
+    }).join("");
+
+    let overviewText = "";
+    let statusBlock = "";
+
+    if (result.availableMonthly !== null) {
+        const remaining = Math.max(
+            result.availableMonthly - result.totalMonthly,
+            0
+        );
+
+        overviewText = `
+            <div class="optimization-overview-text">
+                <h3>Your Savings Overview</h3>
+                <p> <br>
+                    You currently have
+                    <strong>${result.plans.length} active goal${result.plans.length > 1 ? "s" : ""}</strong>,
+                    requiring a total contribution of
+                    <strong>${formatINR(result.totalMonthly)} per month</strong>.
+                 </br></p>
+                <p>
+                    Your current financial activity leaves
+                    <strong>${formatINR(result.availableMonthly)} available for monthly savings</strong>.
+                    ${result.affordable
+                        ? `After funding ${result.plans.length > 1 ? "these goals" : "this goal"}, you would have approximately <strong>${formatINR(remaining)}</strong> remaining each month.`
+                        : `This is currently <strong>${formatINR(result.shortfall)}</strong> below the amount required to meet ${result.plans.length > 1 ? "all deadlines" : "the deadline"}.`
+                    }
+                </p>
+            </div>
+        `;
+
+        if (result.affordable) {
+            statusBlock = `
+                <div class="optimization-status success">
+                    <br><i class="fa-solid fa-circle-check"><strong>Your current plan is achievable.</strong></i></br>
+                    <div>
+                        
+                        <span><br>
+                            Based on your current financial capacity, you can meet the required
+                            ${result.plans.length > 1 ? "contributions" : "contribution"} within the existing
+                            ${result.plans.length > 1 ? "deadlines" : "deadline"}.
+                        </br></span>
+                    </div>
+                </div>
+            `;
+        } else {
+            statusBlock = `
+                <div class="optimization-status warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Your current plan needs adjustment.</strong>
+                        <span>
+                            You need an additional ${formatINR(result.shortfall)} per month to meet
+                            ${result.plans.length > 1 ? "all current deadlines" : "the current deadline"}.
+                            FinTack has therefore calculated a suggested allocation based on your available savings.
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        overviewText = `
+            <div class="optimization-overview-text">
+                <h3>Your Savings Overview</h3>
+                <p>
+                    You currently have
+                    <strong>${result.plans.length} active goal${result.plans.length > 1 ? "s" : ""}</strong>,
+                    requiring a total contribution of
+                    <strong>${formatINR(result.totalMonthly)} per month</strong>.
+                </p>
+            </div>
+        `;
+
+        statusBlock = `
+            <div class="optimization-status">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <div>
+                    <strong>Your deadline-based savings plan is ready.</strong>
+                    <span>
+                        Financial capacity data is currently unavailable, so this plan shows the
+                        contribution required to meet ${result.plans.length > 1 ? "your deadlines" : "your deadline"}.
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
+    content.innerHTML = `
+        <div class="optimization-result">
+            ${overviewText}
+            ${statusBlock}
+
+            <div class="optimization-section-title">
+                ${result.plans.length > 1 ? "Goal Contributions" : "Goal Contribution"}
+            </div>
+
+            <div class="optimization-goals-list">
+                ${goalRows}
+            </div>
+
+            <div class="optimization-section-title">
+                Savings Schedule
+            </div>
+
+            <div class="optimization-frequency">
+                <div>
+                    <span>Daily</span>
+                    <strong>${formatINR(result.totalDaily)}</strong>
+                </div>
+                <div>
+                    <span>Weekly</span>
+                    <strong>${formatINR(result.totalWeekly)}</strong>
+                </div>
+                <div>
+                    <span>Monthly</span>
+                    <strong>${formatINR(result.totalMonthly)}</strong>
+                </div>
+            </div>
+
+            <p class="optimization-frequency-note">
+                To stay on schedule, aim to save
+                <strong>${formatINR(result.totalDaily)} per day</strong>,
+                <strong>${formatINR(result.totalWeekly)} per week</strong>,
+                or <strong>${formatINR(result.totalMonthly)} per month</strong>.
+            </p>
+        </div>
+    `;
+}
+function openGoalOptimizationPlan() {
+    console.log("🧠 Opening FinTack Smart Goal Plan");
+
+    const existingModal =
+        document.getElementById("goalOptimizationModal");
+
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement("div");
+
+    modal.id = "goalOptimizationModal";
+    modal.className = "goal-optimization-overlay";
+
+    modal.innerHTML = `
+        <div class="goal-optimization-modal">
+
+            <div class="goal-optimization-header">
+
+                <div>
+                    <span class="goal-optimization-label">
+                        FINTACK AI
+                    </span>
+
+                    <h2>Smart Savings Plan</h2>
+
+                    <p>
+                        Optimize your goals based on your
+                        current financial capacity.
+                    </p>
+                </div>
+
+                <button
+                    class="goal-optimization-close"
+                    id="closeGoalOptimization"
+                    aria-label="Close"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div
+                class="goal-optimization-content"
+                id="goalOptimizationContent"
+            >
+                <div class="optimization-loading">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>
+                        Analyzing your financial plan...
+                    </span>
+                </div>
+            </div>
+
+            <div class="goal-optimization-actions">
+
+                <button
+                    class="optimization-cancel-btn"
+                    id="cancelGoalOptimization"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="optimization-apply-btn"
+                    id="applyGoalOptimization"
+                    disabled
+                >
+                    Apply Optimized Plan
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = "hidden";
+
+    const closeModal = () => {
+        modal.remove();
+        document.body.style.overflow = "";
+    };
+
+    document
+        .getElementById("closeGoalOptimization")
+        ?.addEventListener("click", closeModal);
+
+    document
+        .getElementById("cancelGoalOptimization")
+        ?.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", event => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    /*
+        Allow the loading state to render first, then perform the
+        calculation. This keeps the modal responsive and preserves
+        the existing loading design.
+    */
+    window.setTimeout(async () => {
+        const content =
+            document.getElementById("goalOptimizationContent");
+
+        const applyButton =
+            document.getElementById("applyGoalOptimization");
+
+        try {
+            const goals = getOptimizationGoals();
+
+            /*
+                Refresh transactions when Optimize Plan is opened.
+                This makes the optimizer use the latest data even after
+                transactions are added from Calendar or the + button.
+            */
+            try {
+                const user = JSON.parse(
+                    localStorage.getItem("user") || "null"
+                );
+
+                if (user?.id) {
+                    const response = await fetch(
+                        `${API_ORIGIN}/api/transactions/${user.id}`
+                    );
+
+                    if (response.ok) {
+                        const payload = await response.json();
+
+                        const transactions = Array.isArray(payload)
+                            ? payload
+                            : Array.isArray(payload.transactions)
+                                ? payload.transactions
+                                : [];
+
+                        const now = new Date();
+                        let monthlyIncome = 0;
+                        let monthlyExpense = 0;
+
+                        transactions.forEach(transaction => {
+                            const date = new Date(transaction.date);
+
+                            if (
+                                Number.isNaN(date.getTime()) ||
+                                date.getFullYear() !== now.getFullYear() ||
+                                date.getMonth() !== now.getMonth()
+                            ) {
+                                return;
+                            }
+
+                            const amount =
+                                Number(transaction.amount) || 0;
+
+                            if (transaction.type === "income") {
+                                monthlyIncome += amount;
+                            } else if (transaction.type === "expense") {
+                                monthlyExpense += amount;
+                            }
+                        });
+
+                        currentFinancialData = {
+                            monthlyIncome,
+                            monthlyExpense
+                        };
+
+                        console.log(
+                            "💰 FinTack Goal Financial Capacity:",
+                            currentFinancialData
+                        );
+                    }
+                }
+            } catch (financialError) {
+                /*
+                    Do not break the optimizer if the refresh request
+                    fails. It can still use the last dashboard values.
+                */
+                console.warn(
+                    "⚠️ Could not refresh optimizer financial data:",
+                    financialError
+                );
+            }
+
+            const result = calculateGoalOptimization(goals);
+
+            renderGoalOptimizationResult(content, result);
+
+            if (applyButton && result.plans.length > 0) {
+                applyButton.disabled = false;
+
+                applyButton.onclick = () => {
+                    /*
+                        The calculated allocation is exposed as an event
+                        rather than silently modifying saved_amount.
+                        Applying a savings plan must not falsely claim
+                        that money has already been saved.
+                    */
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            "fintack:goal-plan-optimized",
+                            {
+                                detail: {
+                                    generatedAt:
+                                        new Date().toISOString(),
+
+                                    totalRequiredMonthly:
+                                        result.totalMonthly,
+
+                                    availableMonthly:
+                                        result.availableMonthly,
+
+                                    allocations:
+                                        result.optimizedGoals.map(
+                                            item => ({
+                                                goalId: item.goal.id,
+                                                title: item.goal.title,
+                                                requiredMonthly:
+                                                    Math.round(
+                                                        item.requiredMonthly
+                                                    ),
+                                                recommendedMonthly:
+                                                    Math.round(
+                                                        item.recommendedMonthly
+                                                    )
+                                            })
+                                        )
+                                }
+                            }
+                        )
+                    );
+
+                    console.log(
+                        "✨ FinTack Optimized Goal Plan Applied:",
+                        result
+                    );
+
+                    applyButton.textContent = "Plan Applied";
+                    applyButton.disabled = true;
+
+                    window.setTimeout(closeModal, 700);
+                };
+            }
+
+        } catch (error) {
+            console.error(
+                "❌ FinTack Goal Optimization Error:",
+                error
+            );
+
+            if (content) {
+                content.innerHTML = `
+                    <div class="optimization-empty">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <h3>Unable to calculate plan</h3>
+                        <p>
+                            FinTack couldn't generate the savings plan.
+                            Please verify your goal amounts and deadlines.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+    }, 350);
+}
+
+
+/* =====================================================
+                ASK FINTACK AI
+===================================================== */
+
+const FINTACK_API_BASE = `${API_ORIGIN}/api`;
+
+let finTackAIInitialized = false;
+let finTackAIConversation = [];
+
+function escapeFinTackHTML(value = "") {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function getFinTackAIUser() {
+    try {
+        return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+        return null;
+    }
+}
+
+function getAskFinTackTrigger() {
+    /*
+        Supports the most common IDs/classes so this can attach to the
+        existing "Ask FinTack AI anything..." control without changing
+        the rest of ui.js.
+    */
+    return (
+        document.getElementById("ask-fintack-ai") ||
+        document.getElementById("ask-fintack") ||
+        document.getElementById("ai-search") ||
+        document.getElementById("ai-search-bar") ||
+        document.querySelector(".ai-search-bar") ||
+        document.querySelector(".ask-ai-bar") ||
+        document.querySelector('[placeholder*="Ask FinTack"]')
+    );
+}
+
+function ensureFinTackAIStyles() {
+    if (document.getElementById("fintack-ai-runtime-styles")) return;
+
+    const style = document.createElement("style");
+    style.id = "fintack-ai-runtime-styles";
+    style.textContent = `
+        .fintack-ai-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.62);
+            backdrop-filter: blur(8px);
+            padding: 14px;
+        }
+
+        .fintack-ai-panel {
+            width: min(100%, 430px);
+            height: min(82vh, 720px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(135, 180, 230, 0.16);
+            border-radius: 24px;
+            background: #111a28;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+        }
+
+        .fintack-ai-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+
+        .fintack-ai-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .fintack-ai-logo {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: rgba(105, 184, 255, .14);
+            color: #72bdff;
+        }
+
+        .fintack-ai-header h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 17px;
+        }
+
+        .fintack-ai-header p {
+            margin: 3px 0 0;
+            color: #8996a8;
+            font-size: 11px;
+        }
+
+        .fintack-ai-close {
+            width: 36px;
+            height: 36px;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,.07);
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+
+        .fintack-ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+            scroll-behavior: smooth;
+        }
+
+        .fintack-ai-message {
+            display: flex;
+            margin-bottom: 14px;
+        }
+
+        .fintack-ai-message.user {
+            justify-content: flex-end;
+        }
+
+        .fintack-ai-bubble {
+            max-width: 88%;
+            padding: 11px 13px;
+            border-radius: 16px;
+            color: #e9f0f8;
+            font-size: 13px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .fintack-ai-message.assistant .fintack-ai-bubble {
+            background: #192536;
+            border: 1px solid rgba(255,255,255,.06);
+            border-bottom-left-radius: 5px;
+        }
+
+        .fintack-ai-message.user .fintack-ai-bubble {
+            background: #6dbaff;
+            color: #06101b;
+            font-weight: 600;
+            border-bottom-right-radius: 5px;
+        }
+
+        .fintack-ai-source-card {
+            margin-top: 9px;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(0,0,0,.18);
+            border: 1px solid rgba(255,255,255,.06);
+        }
+
+        .fintack-ai-source-card strong {
+            display: block;
+            color: #fff;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .fintack-ai-source-card span {
+            color: #8fa0b4;
+            font-size: 11px;
+        }
+
+        .fintack-ai-source-card a {
+            display: inline-block;
+            margin-top: 7px;
+            color: #73bdff;
+            font-size: 11px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .fintack-ai-suggestions {
+            display: flex;
+            gap: 7px;
+            overflow-x: auto;
+            padding: 0 16px 12px;
+            scrollbar-width: none;
+        }
+
+        .fintack-ai-suggestions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .fintack-ai-suggestion {
+            flex: 0 0 auto;
+            border: 1px solid rgba(115,189,255,.18);
+            border-radius: 999px;
+            background: rgba(115,189,255,.07);
+            color: #a9cdec;
+            padding: 8px 11px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .fintack-ai-input-area {
+            display: flex;
+            align-items: flex-end;
+            gap: 9px;
+            padding: 12px;
+            border-top: 1px solid rgba(255,255,255,.08);
+            background: #101824;
+        }
+
+        .fintack-ai-input {
+            flex: 1;
+            min-height: 44px;
+            max-height: 110px;
+            resize: none;
+            outline: none;
+            border: 1px solid rgba(255,255,255,.09);
+            border-radius: 15px;
+            background: #182231;
+            color: #fff;
+            padding: 12px 13px;
+            font: inherit;
+            font-size: 13px;
+        }
+
+        .fintack-ai-input::placeholder {
+            color: #718096;
+        }
+
+        .fintack-ai-send {
+            flex: 0 0 44px;
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: 14px;
+            background: #6dbaff;
+            color: #07111d;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .fintack-ai-send:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .fintack-ai-typing {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .fintack-ai-typing i {
+            width: 5px;
+            height: 5px;
+            display: block;
+            border-radius: 50%;
+            background: #90a1b5;
+            animation: fintackAITyping 1s infinite alternate;
+        }
+
+        .fintack-ai-typing i:nth-child(2) { animation-delay: .2s; }
+        .fintack-ai-typing i:nth-child(3) { animation-delay: .4s; }
+
+        @keyframes fintackAITyping {
+            from { opacity: .35; transform: translateY(1px); }
+            to { opacity: 1; transform: translateY(-2px); }
+        }
+
+        @media (min-width: 600px) {
+            .fintack-ai-overlay {
+                align-items: center;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+}
+
+function addFinTackAIMessage(role, message, extraHTML = "") {
+    const messages = document.getElementById("fintackAIMessages");
+    if (!messages) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = `fintack-ai-message ${role}`;
+
+    wrapper.innerHTML = `
+        <div class="fintack-ai-bubble">
+            ${escapeFinTackHTML(message)}
+            ${extraHTML}
+        </div>
+    `;
+
+    messages.appendChild(wrapper);
+    messages.scrollTop = messages.scrollHeight;
+
+    finTackAIConversation.push({
+        role,
+        message
+    });
+}
+
+function showFinTackAITyping() {
+    const messages = document.getElementById("fintackAIMessages");
+    if (!messages || document.getElementById("fintackAITyping")) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.id = "fintackAITyping";
+    wrapper.className = "fintack-ai-message assistant";
+    wrapper.innerHTML = `
+        <div class="fintack-ai-bubble">
+            <span class="fintack-ai-typing">
+                <i></i><i></i><i></i>
+            </span>
+        </div>
+    `;
+
+    messages.appendChild(wrapper);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function hideFinTackAITyping() {
+    document.getElementById("fintackAITyping")?.remove();
+}
+
+function extractStockSymbol(question) {
+    const upper = String(question || "").toUpperCase();
+
+    const knownCompanies = {
+        NVIDIA: "NVDA",
+        "NVIDIA CORPORATION": "NVDA",
+        APPLE: "AAPL",
+        MICROSOFT: "MSFT",
+        TESLA: "TSLA",
+        AMAZON: "AMZN",
+        META: "META",
+        GOOGLE: "GOOGL",
+        ALPHABET: "GOOGL",
+        AMD: "AMD",
+        INTEL: "INTC",
+        NETFLIX: "NFLX"
+    };
+
+    for (const [company, symbol] of Object.entries(knownCompanies)) {
+        if (upper.includes(company)) return symbol;
+    }
+
+    const symbolMatch = upper.match(
+        /\b(AAPL|NVDA|MSFT|TSLA|AMZN|META|GOOGL|GOOG|AMD|INTC|NFLX)\b/
+    );
+
+    return symbolMatch?.[1] || null;
+}
+
+function isNewsQuestion(question) {
+    const text = String(question || "").toLowerCase();
+
+    /*
+        Route only genuinely time-sensitive market/company-news questions
+        to Finnhub. General finance questions continue to /api/ai/ask.
+    */
+    const newsTerms = [
+        "news",
+        "latest",
+        "headline",
+        "headlines",
+        "today",
+        "recent",
+        "update",
+        "updates",
+        "what happened",
+        "happening"
+    ];
+
+    const marketTerms = [
+        "market",
+        "stock",
+        "stocks",
+        "nvidia",
+        "apple",
+        "microsoft",
+        "tesla",
+        "amazon",
+        "meta",
+        "google",
+        "alphabet",
+        "amd",
+        "intel",
+        "netflix",
+        "aapl",
+        "nvda",
+        "msft",
+        "tsla",
+        "amzn",
+        "googl",
+        "goog",
+        "intc",
+        "nflx"
+    ];
+
+    const hasNewsIntent = newsTerms.some(term => text.includes(term));
+    const hasMarketContext = marketTerms.some(term => text.includes(term));
+
+    return hasNewsIntent && hasMarketContext;
+}
+
+async function fetchFinTackNewsAnswer(question) {
+    const symbol = extractStockSymbol(question);
+
+    const endpoint = symbol
+        ? `${FINTACK_API_BASE}/news/company/${encodeURIComponent(symbol)}?days=7&limit=5`
+        : `${FINTACK_API_BASE}/news/market?category=general&limit=5`;
+
+    const response = await fetch(endpoint);
+
+    if (!response.ok) {
+        throw new Error(`News request failed (${response.status}).`);
+    }
+
+    const payload = await response.json();
+    const articles = Array.isArray(payload.articles)
+        ? payload.articles
+        : [];
+
+    if (!articles.length) {
+        return {
+            answer: symbol
+                ? `I couldn't find recent news for ${symbol} right now.`
+                : "I couldn't find recent market news right now.",
+            extraHTML: ""
+        };
+    }
+
+    const top = articles.slice(0, 3);
+
+    const answer = symbol
+        ? `Here are the latest stories I found for ${symbol}.`
+        : "Here are some of the latest market stories.";
+
+    const extraHTML = top.map(article => {
+        const title = escapeFinTackHTML(
+            article.headline || "Market update"
+        );
+        const source = escapeFinTackHTML(
+            article.source || "News source"
+        );
+        const url = escapeFinTackHTML(article.url || "#");
+
+        return `
+            <div class="fintack-ai-source-card">
+                <strong>${title}</strong>
+                <span>${source}</span>
+                ${article.url ? `
+                    <a href="${url}" target="_blank" rel="noopener noreferrer">
+                        Read article
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                ` : ""}
+            </div>
+        `;
+    }).join("");
+
+    return { answer, extraHTML };
+}
+
+async function fetchFinTackGeneralAIAnswer(question) {
+    /*
+        Your existing backend already exposes /api/ai/ask.
+        If the external AI provider is unavailable/quota-limited,
+        the user receives a clean error rather than breaking the UI.
+    */
+    const user = getFinTackAIUser();
+
+    const response = await fetch(`${FINTACK_API_BASE}/ai/ask`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: question,
+            user_id: user?.id || null
+        })
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok || payload.success === false) {
+        throw new Error(
+            payload.message ||
+            "FinTack AI is temporarily unavailable."
+        );
+    }
+
+    return (
+        payload.answer ||
+        payload.response ||
+        payload.message ||
+        "I received your question, but no response was returned."
+    );
+}
+
+async function submitFinTackAIQuestion(question) {
+    const cleanQuestion = String(question || "").trim();
+    if (!cleanQuestion) return;
+
+    const input = document.getElementById("fintackAIInput");
+    const sendButton = document.getElementById("fintackAISend");
+
+    if (input) input.value = "";
+    if (sendButton) sendButton.disabled = true;
+
+    addFinTackAIMessage("user", cleanQuestion);
+    showFinTackAITyping();
+
+    try {
+        if (isNewsQuestion(cleanQuestion)) {
+            console.log(
+                "📰 Ask FinTack AI routing to Finnhub News:",
+                cleanQuestion
+            );
+
+            const result =
+                await fetchFinTackNewsAnswer(cleanQuestion);
+
+            hideFinTackAITyping();
+
+            addFinTackAIMessage(
+                "assistant",
+                result.answer,
+                result.extraHTML
+            );
+        } else {
+            console.log(
+                "🤖 Ask FinTack AI routing to General AI:",
+                cleanQuestion
+            );
+
+            const answer =
+                await fetchFinTackGeneralAIAnswer(cleanQuestion);
+
+            hideFinTackAITyping();
+            addFinTackAIMessage("assistant", answer);
+        }
+    } catch (error) {
+        console.error("❌ Ask FinTack AI Error:", error);
+        hideFinTackAITyping();
+
+        addFinTackAIMessage(
+            "assistant",
+            isNewsQuestion(cleanQuestion)
+                ? "I couldn't load the latest market information right now. Please try again in a moment."
+                : "FinTack AI is temporarily unavailable. Please try again shortly."
+        );
+    } finally {
+        if (sendButton) sendButton.disabled = false;
+        input?.focus();
+    }
+}
+
+export function openFinTackAI(initialQuestion = "") {
+    ensureFinTackAIStyles();
+
+    document.getElementById("fintackAIOverlay")?.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "fintackAIOverlay";
+    overlay.className = "fintack-ai-overlay";
+
+    overlay.innerHTML = `
+        <section
+            class="fintack-ai-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ask FinTack AI"
+        >
+            <header class="fintack-ai-header">
+                <div class="fintack-ai-brand">
+                    <div class="fintack-ai-logo">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+
+                    <div>
+                        <h2>FinTack AI</h2>
+                        <p>Finance and market assistant</p>
+                    </div>
+                </div>
+
+                <button
+                    id="closeFinTackAI"
+                    class="fintack-ai-close"
+                    aria-label="Close FinTack AI"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </header>
+
+            <div
+                id="fintackAIMessages"
+                class="fintack-ai-messages"
+            ></div>
+
+            <div class="fintack-ai-suggestions">
+                <button class="fintack-ai-suggestion">
+                    Latest NVIDIA news
+                </button>
+
+                <button class="fintack-ai-suggestion">
+                    Latest market news
+                </button>
+
+                <button class="fintack-ai-suggestion">
+                    Explain SIP investing
+                </button>
+            </div>
+
+            <form
+                id="fintackAIForm"
+                class="fintack-ai-input-area"
+            >
+                <textarea
+                    id="fintackAIInput"
+                    class="fintack-ai-input"
+                    rows="1"
+                    placeholder="Ask FinTack AI anything..."
+                    aria-label="Ask FinTack AI"
+                ></textarea>
+
+                <button
+                    id="fintackAISend"
+                    class="fintack-ai-send"
+                    type="submit"
+                    aria-label="Send"
+                >
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
+            </form>
+        </section>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = "hidden";
+
+    finTackAIConversation = [];
+
+    addFinTackAIMessage(
+        "assistant",
+        "Hi! I'm FinTack AI. Ask me about stocks, market news, investing, or personal finance."
+    );
+
+    const close = () => {
+        overlay.remove();
+        document.body.style.overflow = "";
+    };
+
+    document
+        .getElementById("closeFinTackAI")
+        ?.addEventListener("click", close);
+
+    overlay.addEventListener("click", event => {
+        if (event.target === overlay) close();
+    });
+
+    document
+        .getElementById("fintackAIForm")
+        ?.addEventListener("submit", event => {
+            event.preventDefault();
+
+            submitFinTackAIQuestion(
+                document.getElementById("fintackAIInput")?.value
+            );
+        });
+
+    document
+        .getElementById("fintackAIInput")
+        ?.addEventListener("keydown", event => {
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+                event.preventDefault();
+
+                submitFinTackAIQuestion(event.currentTarget.value);
+            }
+        });
+
+    overlay
+        .querySelectorAll(".fintack-ai-suggestion")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                submitFinTackAIQuestion(button.textContent.trim());
+            });
+        });
+
+    const input = document.getElementById("fintackAIInput");
+    input?.focus();
+
+    if (initialQuestion.trim()) {
+        submitFinTackAIQuestion(initialQuestion);
+    }
+}
+
+export function initializeFinTackAI() {
+    if (finTackAIInitialized) return;
+
+    const trigger = getAskFinTackTrigger();
+
+    if (!trigger) {
+        console.warn(
+            "⚠️ Ask FinTack AI trigger was not found. " +
+            "Give the search bar id='ask-fintack-ai' if needed."
+        );
+        return;
+    }
+
+    finTackAIInitialized = true;
+
+    const clickable =
+        trigger.closest("form") ||
+        trigger.closest("button") ||
+        trigger;
+
+    if (clickable.tagName === "FORM") {
+        clickable.addEventListener("submit", event => {
+            event.preventDefault();
+
+            const field =
+                clickable.querySelector("input, textarea");
+
+            const question = field?.value?.trim() || "";
+
+            openFinTackAI(question);
+
+            if (field) field.value = "";
+        });
+    } else {
+        clickable.addEventListener("click", event => {
+            const field = trigger.matches?.("input, textarea")
+                ? trigger
+                : trigger.querySelector?.("input, textarea");
+
+            /*
+                Inputs should remain usable. Clicking/focusing an empty
+                search field opens the assistant, while entered text is
+                passed through as the first question.
+            */
+            event.preventDefault();
+
+            const question = field?.value?.trim() || "";
+            openFinTackAI(question);
+
+            if (field) field.value = "";
+        });
+    }
+
+    console.log("🤖 Ask FinTack AI initialized");
+}
+
+function scheduleFinTackAIInitialization() {
+    initializeFinTackAI();
+
+    /*
+        Some FinTack views are rendered dynamically. Retry briefly so the
+        AI bar can be discovered after the dashboard has finished loading.
+    */
+    if (!finTackAIInitialized) {
+        let attempts = 0;
+
+        const timer = window.setInterval(() => {
+            attempts += 1;
+            initializeFinTackAI();
+
+            if (finTackAIInitialized || attempts >= 10) {
+                window.clearInterval(timer);
+            }
+        }, 500);
+    }
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener(
+        "DOMContentLoaded",
+        scheduleFinTackAIInitialization
+    );
+} else {
+    scheduleFinTackAIInitialization();
+}
