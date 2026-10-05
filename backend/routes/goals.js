@@ -11,10 +11,7 @@ const { requireAuth } = require("../middleware/auth");
 const { validateGoal } = require("../utils/validators");
 const { buildSummary } = require("../utils/analytics");
 const InvestmentEngine = require("../utils/investmentEngine");
-<<<<<<< HEAD
 const { encrypt, decryptRow } = require("../utils/crypto");
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
 router.use(requireAuth);
 
@@ -31,7 +28,6 @@ router.get("/:userId", async (req, res, next) => {
             });
         }
 
-<<<<<<< HEAD
         const { data: rows, error } = await supabase
             .from("goals")
             .select("id, user_id, encrypted_payload, title, target_amount, saved_amount, deadline, risk_tolerance, created_at, updated_at")
@@ -44,20 +40,6 @@ router.get("/:userId", async (req, res, next) => {
         ])).filter(Boolean).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         return res.json({ success: true, goals });
-=======
-        const { data, error } = await supabase
-            .from("goals")
-            .select("*")
-            .eq("user_id", req.user.id)
-            .order("created_at", { ascending: false });
-
-        if (error) throw error;
-
-        return res.json({
-            success: true,
-            goals: data || []
-        });
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
     } catch (err) {
         return next(err);
     }
@@ -83,16 +65,9 @@ router.post("/", async (req, res, next) => {
             .from("goals")
             .insert({
                 user_id: req.user.id,
-<<<<<<< HEAD
                 encrypted_payload: encrypt({ saved_amount: 0, ...value })
             })
             .select("id, user_id, encrypted_payload, created_at, updated_at")
-=======
-                saved_amount: 0,
-                ...value
-            })
-            .select()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .single();
 
         if (error) throw error;
@@ -100,11 +75,7 @@ router.post("/", async (req, res, next) => {
         return res.status(201).json({
             success: true,
             message: "Goal created successfully.",
-<<<<<<< HEAD
             goal: decryptRow(data)
-=======
-            goal: data
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -129,7 +100,6 @@ router.put("/:id", async (req, res, next) => {
             });
         }
 
-<<<<<<< HEAD
         const { data: existing, error: fetchError } = await supabase
             .from("goals")
             .select("id, user_id, encrypted_payload, title, target_amount, saved_amount, deadline, risk_tolerance, created_at, updated_at")
@@ -153,14 +123,6 @@ router.put("/:id", async (req, res, next) => {
             .eq("id", req.params.id)
             .eq("user_id", req.user.id)
             .select("id, user_id, encrypted_payload, created_at, updated_at")
-=======
-        const { data, error } = await supabase
-            .from("goals")
-            .update(value)
-            .eq("id", req.params.id)
-            .eq("user_id", req.user.id)
-            .select()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .maybeSingle();
 
         if (error) throw error;
@@ -175,11 +137,7 @@ router.put("/:id", async (req, res, next) => {
         return res.json({
             success: true,
             message: "Goal updated successfully.",
-<<<<<<< HEAD
             goal: decryptRow(data)
-=======
-            goal: data
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -204,26 +162,17 @@ router.put("/:id/savings", async (req, res, next) => {
             });
         }
 
-<<<<<<< HEAD
         const { data: goalRow, error: fetchError } = await supabase
             .from("goals")
             .select("id, user_id, encrypted_payload, title, target_amount, saved_amount, deadline, risk_tolerance, created_at, updated_at")
-=======
-        const { data: goal, error: fetchError } = await supabase
-            .from("goals")
-            .select("*")
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .eq("id", req.params.id)
             .eq("user_id", req.user.id)
             .maybeSingle();
 
         if (fetchError) throw fetchError;
 
-<<<<<<< HEAD
         const goal = decryptRow(goalRow, ["title", "target_amount", "saved_amount", "deadline", "risk_tolerance", "inflation_rate", "expected_return_rate"]);
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         if (!goal) {
             return res.status(404).json({
                 success: false,
@@ -238,40 +187,25 @@ router.put("/:id/savings", async (req, res, next) => {
 
         const { data, error } = await supabase
             .from("goals")
-<<<<<<< HEAD
             .update({ encrypted_payload: encrypt({ ...goal, saved_amount: newAmount }) })
             .eq("id", goal.id)
             .eq("user_id", req.user.id)
             .select("id, user_id, encrypted_payload, created_at, updated_at")
-=======
-            .update({ saved_amount: newAmount })
-            .eq("id", goal.id)
-            .eq("user_id", req.user.id)
-            .select()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .single();
 
         if (error) throw error;
 
-<<<<<<< HEAD
         const deadlineDate = goal.deadline ? new Date(goal.deadline) : new Date();
         const yearsToDeadline = Math.max(0, (deadlineDate.getTime() - Date.now()) / (365.25 * 24 * 60 * 60 * 1000));
         const inflationRate = Math.max(0, Math.min(30, Number(goal.inflation_rate ?? 6)));
         const deadlineTarget = Number(goal.target_amount || 0) * Math.pow(1 + inflationRate / 100, yearsToDeadline);
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         return res.json({
             success: true,
             message: "Savings updated.",
             saved_amount: newAmount,
-<<<<<<< HEAD
             completed: newAmount >= deadlineTarget,
             goal: decryptRow(data)
-=======
-            completed: newAmount >= Number(goal.target_amount || 0),
-            goal: data
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -322,26 +256,17 @@ router.delete("/:id", async (req, res, next) => {
 
 router.post("/:id/investment-plan", async (req, res, next) => {
     try {
-<<<<<<< HEAD
         const { data: goalRow, error: goalError } = await supabase
             .from("goals")
             .select("id, user_id, encrypted_payload, title, target_amount, saved_amount, deadline, risk_tolerance, created_at, updated_at")
-=======
-        const { data: goal, error: goalError } = await supabase
-            .from("goals")
-            .select("*")
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .eq("id", req.params.id)
             .eq("user_id", req.user.id)
             .maybeSingle();
 
         if (goalError) throw goalError;
 
-<<<<<<< HEAD
         const goal = decryptRow(goalRow, ["title", "target_amount", "saved_amount", "deadline", "risk_tolerance", "inflation_rate", "expected_return_rate"]);
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         if (!goal) {
             return res.status(404).json({
                 success: false,
@@ -366,13 +291,9 @@ router.post("/:id/investment-plan", async (req, res, next) => {
                 title: goal.title,
                 targetAmount: Number(goal.target_amount || 0),
                 savedAmount: Number(goal.saved_amount || 0),
-<<<<<<< HEAD
                 deadline: goal.deadline,
                 inflationRate: Number(goal.inflation_rate ?? 6),
                 expectedReturnRate: Number(goal.expected_return_rate ?? 8)
-=======
-                deadline: goal.deadline
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             },
             finances: {
                 monthlyIncome: Number(

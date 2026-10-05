@@ -10,10 +10,7 @@ const supabase = require("../config/supabase");
 const { requireAuth } = require("../middleware/auth");
 const { validateTransaction, CATEGORIES } = require("../utils/validators");
 const { buildSummary } = require("../utils/analytics");
-<<<<<<< HEAD
 const { encrypt, decryptRow } = require("../utils/crypto");
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
 /* Every route below requires a valid session. */
 router.use(requireAuth);
@@ -63,7 +60,6 @@ router.get("/:userId", async (req, res, next) => {
 
         const offset = Math.max(0, Number(req.query.offset) || 0);
 
-<<<<<<< HEAD
         const { data: rows, error } = await supabase
             .from("transactions")
             .select("id, user_id, encrypted_payload, title, description, amount, type, category, date, created_at, updated_at")
@@ -87,51 +83,14 @@ router.get("/:userId", async (req, res, next) => {
         data.sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at));
         const total = data.length;
         data = data.slice(offset, offset + limit);
-=======
-        let query = supabase
-            .from("transactions")
-            .select("*", { count: "exact" })
-            .eq("user_id", userId);
-
-        if (req.query.from) query = query.gte("date", req.query.from);
-        if (req.query.to) query = query.lte("date", req.query.to);
-
-        if (req.query.type) {
-            query = query.eq("type", String(req.query.type).toLowerCase());
-        }
-
-        if (req.query.category) {
-            query = query.eq("category", req.query.category);
-        }
-
-        if (req.query.search) {
-            const term = String(req.query.search).replace(/[%,]/g, "");
-            query = query.ilike("title", `%${term}%`);
-        }
-
-        const { data, error, count } = await query
-            .order("date", { ascending: false })
-            .order("created_at", { ascending: false })
-            .range(offset, offset + limit - 1);
-
-        if (error) throw error;
-
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         return res.json({
             success: true,
             transactions: data || [],
             pagination: {
-<<<<<<< HEAD
                 total,
                 limit,
                 offset,
                 hasMore: total > offset + data.length
-=======
-                total: count ?? (data || []).length,
-                limit,
-                offset,
-                hasMore: (count ?? 0) > offset + (data || []).length
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             }
         });
     } catch (err) {
@@ -156,23 +115,14 @@ router.get("/:userId/analytics", async (req, res, next) => {
             });
         }
 
-<<<<<<< HEAD
         const { data: rows, error } = await supabase
             .from("transactions")
             .select("id, user_id, encrypted_payload, title, description, amount, type, category, date, created_at, updated_at")
             .eq("user_id", userId)
-=======
-        const { data, error } = await supabase
-            .from("transactions")
-            .select("id, title, description, amount, type, category, date, created_at")
-            .eq("user_id", userId)
-            .order("date", { ascending: false })
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .limit(10000);
 
         if (error) throw error;
 
-<<<<<<< HEAD
         const data = (rows || []).map(row => decryptRow(row, [
             "title", "description", "amount", "type", "category", "date"
         ])).filter(Boolean);
@@ -180,11 +130,6 @@ router.get("/:userId/analytics", async (req, res, next) => {
         return res.json({
             success: true,
             summary: buildSummary(data)
-=======
-        return res.json({
-            success: true,
-            summary: buildSummary(data || [])
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -220,15 +165,9 @@ router.post("/", async (req, res, next) => {
             .from("transactions")
             .insert({
                 user_id: req.user.id,
-<<<<<<< HEAD
                 encrypted_payload: encrypt(value)
             })
             .select("id, user_id, encrypted_payload, created_at, updated_at")
-=======
-                ...value
-            })
-            .select()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .single();
 
         if (error) throw error;
@@ -236,11 +175,7 @@ router.post("/", async (req, res, next) => {
         return res.status(201).json({
             success: true,
             message: "Transaction added successfully.",
-<<<<<<< HEAD
             transaction: decryptRow(data)
-=======
-            transaction: data
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -255,11 +190,7 @@ router.get("/detail/:id", async (req, res, next) => {
     try {
         const { data, error } = await supabase
             .from("transactions")
-<<<<<<< HEAD
             .select("id, user_id, encrypted_payload, title, description, amount, type, category, date, created_at, updated_at")
-=======
-            .select("*")
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .eq("id", req.params.id)
             .eq("user_id", req.user.id)
             .maybeSingle();
@@ -275,11 +206,7 @@ router.get("/detail/:id", async (req, res, next) => {
 
         return res.json({
             success: true,
-<<<<<<< HEAD
             transaction: decryptRow(data, ["title", "description", "amount", "type", "category", "date"])
-=======
-            transaction: data
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -299,11 +226,7 @@ router.put("/:id", async (req, res, next) => {
 
         const { data: existing, error: fetchError } = await supabase
             .from("transactions")
-<<<<<<< HEAD
             .select("id, user_id, encrypted_payload, title, description, amount, type, category, date, created_at, updated_at")
-=======
-            .select("*")
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .eq("id", id)
             .maybeSingle();
 
@@ -323,11 +246,8 @@ router.put("/:id", async (req, res, next) => {
             });
         }
 
-<<<<<<< HEAD
         const existingValue = decryptRow(existing, ["title", "description", "amount", "type", "category", "date"]);
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         const { valid, errors, value } = validateTransaction(req.body, {
             partial: true
         });
@@ -343,7 +263,6 @@ router.put("/:id", async (req, res, next) => {
         const { data, error } = await supabase
             .from("transactions")
             .update({
-<<<<<<< HEAD
                 encrypted_payload: encrypt({
                     ...existingValue,
                     ...value
@@ -352,37 +271,20 @@ router.put("/:id", async (req, res, next) => {
             .eq("id", id)
             .eq("user_id", req.user.id)
             .select("id, user_id, encrypted_payload, created_at, updated_at")
-=======
-                ...value
-            })
-            .eq("id", id)
-            .eq("user_id", req.user.id)
-            .select()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .single();
 
         if (error) throw error;
 
-<<<<<<< HEAD
         const updatedValue = decryptRow(data);
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         /* Return both versions so the client can describe the change. */
         return res.json({
             success: true,
             message: "Transaction updated successfully.",
-<<<<<<< HEAD
             transaction: updatedValue,
             previous: existingValue,
             changes: Object.keys(value).filter(
                 key => String(existingValue[key]) !== String(value[key])
-=======
-            transaction: data,
-            previous: existing,
-            changes: Object.keys(value).filter(
-                key => String(existing[key]) !== String(value[key])
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             )
         });
     } catch (err) {
@@ -403,11 +305,7 @@ router.delete("/:id", async (req, res, next) => {
             .delete()
             .eq("id", id)
             .eq("user_id", req.user.id)
-<<<<<<< HEAD
             .select("id, user_id, encrypted_payload, created_at, updated_at")
-=======
-            .select()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .maybeSingle();
 
         if (error) throw error;
@@ -422,11 +320,7 @@ router.delete("/:id", async (req, res, next) => {
         return res.json({
             success: true,
             message: "Transaction deleted successfully.",
-<<<<<<< HEAD
             transaction: decryptRow(data)
-=======
-            transaction: data
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);

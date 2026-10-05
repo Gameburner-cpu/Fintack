@@ -16,10 +16,7 @@ const { requireAuth, optionalAuth } = require("../middleware/auth");
 const { rateLimit } = require("../middleware/rateLimit");
 const { buildSummary } = require("../utils/analytics");
 const { sanitizeText } = require("../utils/validators");
-<<<<<<< HEAD
 const { encrypt, decryptRow } = require("../utils/crypto");
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
 /* =====================================================
                 GEMINI CLIENT
@@ -87,7 +84,6 @@ async function buildUserContext(userId) {
     if (!userId) return null;
 
     try {
-<<<<<<< HEAD
         const [{ data: transactionRows }, { data: goalRows }] = await Promise.all([
             supabase.from("transactions").select("id, user_id, encrypted_payload, amount, type, category, date").eq("user_id", userId).limit(5000),
             supabase.from("goals").select("id, user_id, encrypted_payload, title, target_amount, saved_amount, deadline").eq("user_id", userId)
@@ -99,25 +95,6 @@ async function buildUserContext(userId) {
         if (!transactions.length && !goals.length) return null;
 
         const summary = buildSummary(transactions);
-=======
-        const [{ data: transactions }, { data: goals }] = await Promise.all([
-            supabase
-                .from("transactions")
-                .select("amount, type, category, date")
-                .eq("user_id", userId)
-                .order("date", { ascending: false })
-                .limit(5000),
-
-            supabase
-                .from("goals")
-                .select("title, target_amount, saved_amount, deadline")
-                .eq("user_id", userId)
-        ]);
-
-        if (!transactions?.length && !goals?.length) return null;
-
-        const summary = buildSummary(transactions || []);
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
         const topCategories = summary.categories
             .slice(0, 5)
@@ -301,24 +278,15 @@ router.post("/chats", async (req, res, next) => {
 
         const { data, error } = await supabase
             .from("ai_chats")
-<<<<<<< HEAD
             .insert([{ user_id: req.user.id, encrypted_payload: encrypt({ title }) }])
             .select("id, user_id, encrypted_payload, created_at, updated_at")
-=======
-            .insert([{ user_id: req.user.id, title }])
-            .select()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .single();
 
         if (error) throw error;
 
         return res.status(201).json({
             success: true,
-<<<<<<< HEAD
             chat: { ...data, ...decryptRow(data) }
-=======
-            chat: data
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -329,15 +297,9 @@ router.post("/chats", async (req, res, next) => {
 
 router.get("/chats", async (req, res, next) => {
     try {
-<<<<<<< HEAD
         const { data: rows, error } = await supabase
             .from("ai_chats")
             .select("id, user_id, encrypted_payload, title, created_at, updated_at")
-=======
-        const { data, error } = await supabase
-            .from("ai_chats")
-            .select("*")
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .eq("user_id", req.user.id)
             .order("updated_at", { ascending: false })
             .limit(100);
@@ -346,11 +308,7 @@ router.get("/chats", async (req, res, next) => {
 
         return res.json({
             success: true,
-<<<<<<< HEAD
             chats: (rows || []).map(row => decryptRow(row, ["title"]))
-=======
-            chats: data || []
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -363,15 +321,9 @@ router.get("/chats/:id/messages", async (req, res, next) => {
     try {
         await assertChatOwnership(req.params.id, req.user.id);
 
-<<<<<<< HEAD
         const { data: rows, error } = await supabase
             .from("ai_messages")
             .select("id, chat_id, role, encrypted_payload, message, created_at")
-=======
-        const { data, error } = await supabase
-            .from("ai_messages")
-            .select("*")
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .eq("chat_id", req.params.id)
             .order("created_at");
 
@@ -379,11 +331,7 @@ router.get("/chats/:id/messages", async (req, res, next) => {
 
         return res.json({
             success: true,
-<<<<<<< HEAD
             messages: (rows || []).map(row => ({ ...decryptRow(row, ["message"]), role: row.role, chat_id: row.chat_id }))
-=======
-            messages: data || []
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
@@ -408,13 +356,8 @@ router.post("/chats/:id/messages", async (req, res, next) => {
 
         const { data, error } = await supabase
             .from("ai_messages")
-<<<<<<< HEAD
             .insert([{ chat_id: req.params.id, role, encrypted_payload: encrypt({ message }) }])
             .select("id, chat_id, role, encrypted_payload, created_at")
-=======
-            .insert([{ chat_id: req.params.id, role, message }])
-            .select()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             .single();
 
         if (error) throw error;
@@ -426,11 +369,7 @@ router.post("/chats/:id/messages", async (req, res, next) => {
 
         return res.status(201).json({
             success: true,
-<<<<<<< HEAD
             savedMessage: { ...decryptRow(data), role, chat_id: req.params.id }
-=======
-            savedMessage: data
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);

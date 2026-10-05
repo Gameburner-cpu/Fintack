@@ -8,10 +8,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const supabase = require("../config/supabase");
 const env = require("../config/env");
-<<<<<<< HEAD
 const { encrypt, decryptRow } = require("../utils/crypto");
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
 const router = express.Router();
 
@@ -86,11 +83,7 @@ async function loadHistory(chatId, limit = 10) {
 
     const { data, error } = await supabase
         .from("ai_messages")
-<<<<<<< HEAD
         .select("role, message, encrypted_payload, chat_id, created_at")
-=======
-        .select("role, message")
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         .eq("chat_id", chatId)
         .order("created_at", { ascending: false })
         .limit(limit);
@@ -99,10 +92,7 @@ async function loadHistory(chatId, limit = 10) {
 
     return data
         .filter(row => row.role === "user" || row.role === "assistant")
-<<<<<<< HEAD
         .map(row => ({ role: row.role, content: decryptRow(row, ["message"]).message }))
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         .reverse();
 }
 
@@ -115,11 +105,7 @@ async function saveMessage(chatId, role, message) {
 
     await supabase
         .from("ai_messages")
-<<<<<<< HEAD
         .insert([{ chat_id: chatId, role, encrypted_payload: encrypt({ message }) }]);
-=======
-        .insert([{ chat_id: chatId, role, message }]);
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
     await supabase
         .from("ai_chats")

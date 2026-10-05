@@ -13,7 +13,6 @@ require("dotenv").config();
     SUPABASE_SERVICE_ROLE was the name used by the original config; both are
     accepted so existing deployments keep working without an env rename.
 */
-<<<<<<< HEAD
 const SUPABASE_SERVICE_ROLE =
     process.env.SUPABASE_SERVICE_ROLE ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -23,23 +22,13 @@ const SUPABASE_KEY =
     process.env.SUPABASE_KEY ||
     process.env.SUPABASE_ANON_KEY ||
     SUPABASE_SERVICE_ROLE ||
-=======
-const SUPABASE_KEY =
-    process.env.SUPABASE_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
     "";
 
 const REQUIRED = {
     SUPABASE_URL: process.env.SUPABASE_URL,
     "SUPABASE_KEY (or SUPABASE_SERVICE_ROLE)": SUPABASE_KEY,
-<<<<<<< HEAD
     JWT_SECRET: process.env.JWT_SECRET,
     DATA_ENCRYPTION_KEY: process.env.DATA_ENCRYPTION_KEY
-=======
-    JWT_SECRET: process.env.JWT_SECRET
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 };
 
 const missing = Object.keys(REQUIRED).filter(key => !REQUIRED[key]);
@@ -66,25 +55,18 @@ const env = {
     PORT: Number(process.env.PORT) || 5000,
 
     SUPABASE_URL: process.env.SUPABASE_URL,
-<<<<<<< HEAD
     // Public/anon key retained for compatibility. Server-side database calls
     // use SUPABASE_SERVICE_ROLE in config/supabase.js so RLS cannot block
     // trusted backend operations. Never expose the service-role key to clients.
     SUPABASE_KEY,
     SUPABASE_SERVICE_ROLE,
-=======
-    SUPABASE_KEY,
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
     JWT_SECRET: process.env.JWT_SECRET || "fintack-insecure-dev-secret",
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
 
-<<<<<<< HEAD
     // 32-byte application key used to encrypt user financial data.
     DATA_ENCRYPTION_KEY: process.env.DATA_ENCRYPTION_KEY || "",
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
     GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.0-flash",
     FINNHUB_API_KEY: process.env.FINNHUB_API_KEY || "",

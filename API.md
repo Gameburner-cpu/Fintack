@@ -395,7 +395,6 @@ Responses carry `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
 
 Postgres error codes are translated to plain language; raw driver messages are
 no longer echoed to clients.
-<<<<<<< HEAD
 
 
 ## Assets
@@ -406,5 +405,3 @@ no longer echoed to clients.
 - `DELETE /api/assets/:id`
 
 Asset details are encrypted by the backend before being persisted.
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8

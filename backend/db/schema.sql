@@ -31,7 +31,6 @@ create unique index if not exists users_email_lower_key
 create table if not exists public.transactions (
     id          uuid primary key default gen_random_uuid(),
     user_id     uuid not null references public.users(id) on delete cascade,
-<<<<<<< HEAD
     -- Legacy columns are nullable and retained only for migration compatibility.
     -- The application writes actual values exclusively to encrypted_payload.
     title       text,
@@ -43,16 +42,6 @@ create table if not exists public.transactions (
     created_at  timestamptz not null default now(),
     updated_at  timestamptz not null default now(),
     encrypted_payload text
-=======
-    title       text not null,
-    description text,
-    amount      numeric(14,2) not null check (amount > 0),
-    type        text not null check (type in ('income', 'expense')),
-    category    text not null default 'Other',
-    date        date not null default current_date,
-    created_at  timestamptz not null default now(),
-    updated_at  timestamptz not null default now()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 );
 
 -- Added by the 2.0 upgrade - see migrations.sql for existing installs.
@@ -80,7 +69,6 @@ create index if not exists transactions_user_category_idx
 create table if not exists public.goals (
     id             uuid primary key default gen_random_uuid(),
     user_id        uuid not null references public.users(id) on delete cascade,
-<<<<<<< HEAD
     -- Legacy columns retained for migration compatibility; actual goal data
     -- is stored in encrypted_payload.
     title          text,
@@ -91,15 +79,6 @@ create table if not exists public.goals (
     created_at     timestamptz not null default now(),
     updated_at     timestamptz not null default now(),
     encrypted_payload text
-=======
-    title          text not null,
-    target_amount  numeric(14,2) not null check (target_amount > 0),
-    saved_amount   numeric(14,2) not null default 0 check (saved_amount >= 0),
-    deadline       date not null,
-    risk_tolerance text default 'moderate',
-    created_at     timestamptz not null default now(),
-    updated_at     timestamptz not null default now()
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 );
 
 alter table public.goals
@@ -109,7 +88,6 @@ create index if not exists goals_user_idx
     on public.goals (user_id, created_at desc);
 
 -- ==========================================================
-<<<<<<< HEAD
 --                           ASSETS
 --
 -- Asset details are stored only inside encrypted_payload. user_id and the
@@ -128,8 +106,6 @@ create index if not exists assets_user_idx
     on public.assets (user_id, created_at desc);
 
 -- ==========================================================
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 --                    PASSWORD RESETS  (new in 2.0)
 --
 -- Stores only a SHA-256 hash of the OTP. Rows are single use and expire.
@@ -160,12 +136,8 @@ create index if not exists password_resets_expiry_idx
 create table if not exists public.ai_chats (
     id         uuid primary key default gen_random_uuid(),
     user_id    uuid not null references public.users(id) on delete cascade,
-<<<<<<< HEAD
     title      text,
     encrypted_payload text,
-=======
-    title      text not null default 'New Chat',
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
@@ -177,12 +149,8 @@ create table if not exists public.ai_messages (
     id         uuid primary key default gen_random_uuid(),
     chat_id    uuid not null references public.ai_chats(id) on delete cascade,
     role       text not null check (role in ('user', 'assistant')),
-<<<<<<< HEAD
     message    text,
     encrypted_payload text,
-=======
-    message    text not null,
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
     created_at timestamptz not null default now()
 );
 
@@ -261,14 +229,11 @@ create trigger goals_set_updated_at
     before update on public.goals
     for each row execute function public.set_updated_at();
 
-<<<<<<< HEAD
 drop trigger if exists assets_set_updated_at on public.assets;
 create trigger assets_set_updated_at
     before update on public.assets
     for each row execute function public.set_updated_at();
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 drop trigger if exists users_set_updated_at on public.users;
 create trigger users_set_updated_at
     before update on public.users

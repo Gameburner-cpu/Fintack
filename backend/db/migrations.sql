@@ -126,7 +126,6 @@ update public.users set email = lower(trim(email));
 create unique index if not exists users_email_lower_key
     on public.users (lower(email));
 
-<<<<<<< HEAD
 
 -- ----------------------------------------------------------
 -- 7. Application-level encryption for user financial payloads
@@ -177,6 +176,4 @@ alter table public.ai_chats alter column title drop not null;
 alter table public.ai_messages add column if not exists encrypted_payload text;
 alter table public.ai_messages alter column message drop not null;
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 commit;

@@ -234,7 +234,6 @@ function validateGoal(input = {}, { partial = false } = {}) {
         errors.push("Deadline is required.");
     }
 
-<<<<<<< HEAD
     /* ---------------- inflation assumption ---------------- */
     if (has("inflation_rate")) {
         const inflation = Number(input.inflation_rate);
@@ -259,8 +258,6 @@ function validateGoal(input = {}, { partial = false } = {}) {
         value.expected_return_rate = 8;
     }
 
-=======
->>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
     if (
         value.target_amount !== undefined &&
         value.saved_amount !== undefined &&
