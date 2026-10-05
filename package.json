@@ -1,0 +1,22 @@
+{
+  "name": "fintack",
+  "version": "2.0.0",
+  "private": true,
+  "description": "FinTack - personal finance tracking, AI assistant and goal-based investment planning",
+  "type": "module",
+  "scripts": {
+    "start": "concurrently \"npm --prefix backend start\" \"cd ai-service/ai-service && python -m uvicorn main:app --host 0.0.0.0 --port 8000\"",
+    "test": "node tests/run.mjs && node tests/integration.cjs",
+    "test:unit": "node tests/run.mjs",
+    "test:api": "node tests/integration.cjs",
+    "test:chatbot": "npm install --no-save jsdom && node tests/chatbot.cjs",
+    "backend": "npm --prefix backend start",
+    "serve": "npx --yes serve -l 5500 ."
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
