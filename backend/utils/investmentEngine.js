@@ -515,8 +515,11 @@ function buildPlan(input = {}) {
 
     const target = Number(goal.targetAmount) || 0;
     const saved = Math.max(0, Number(goal.savedAmount) || 0);
+<<<<<<< HEAD
     const inflationRate = Math.max(0, Math.min(30, Number(goal.inflationRate ?? 6)));
     const expectedReturnRate = Math.max(0, Math.min(30, Number(goal.expectedReturnRate ?? 8)));
+=======
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
     if (target <= 0) {
         return {
@@ -527,10 +530,13 @@ function buildPlan(input = {}) {
 
     const now = new Date();
     const months = goal.deadline ? monthsBetween(now, goal.deadline) : 60;
+<<<<<<< HEAD
     const years = Math.max(0, months / 12);
     const inflationAdjustedTarget = round2(
         target * Math.pow(1 + inflationRate / 100, years)
     );
+=======
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
     const monthlyIncome = Math.max(0, Number(finances.monthlyIncome) || 0);
     const monthlyExpense = Math.max(0, Number(finances.monthlyExpense) || 0);
@@ -556,12 +562,20 @@ function buildPlan(input = {}) {
             goal: {
                 title: goal.title,
                 target: round2(target),
+<<<<<<< HEAD
                 inflationAdjustedTarget,
                 saved: round2(saved),
                 remaining: round2(Math.max(0, inflationAdjustedTarget - saved)),
                 deadline: goal.deadline,
                 months: 0,
                 progressPercent: inflationAdjustedTarget > 0 ? round2(Math.min(100, (saved / inflationAdjustedTarget) * 100)) : 0
+=======
+                saved: round2(saved),
+                remaining: round2(Math.max(0, target - saved)),
+                deadline: goal.deadline,
+                months: 0,
+                progressPercent: round2(Math.min(100, (saved / target) * 100))
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             },
             status: saved >= target ? "completed" : "overdue",
             message: saved >= target
@@ -574,13 +588,20 @@ function buildPlan(input = {}) {
     }
 
     /* ---------------- Already funded ---------------- */
+<<<<<<< HEAD
     if (saved >= inflationAdjustedTarget) {
+=======
+    if (saved >= target) {
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         return {
             success: true,
             goal: {
                 title: goal.title,
                 target: round2(target),
+<<<<<<< HEAD
                 inflationAdjustedTarget,
+=======
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
                 saved: round2(saved),
                 remaining: 0,
                 deadline: goal.deadline,
@@ -607,6 +628,7 @@ function buildPlan(input = {}) {
     const picks = selectInstruments(allocation, risk.score, months);
     const returns = blendedReturn(picks);
 
+<<<<<<< HEAD
     /* ---------------- Inflation-adjusted target + required contribution ---------------- */
     // The user's chosen expected return is the planning assumption. The
     // risk-based blended return remains available separately as context.
@@ -629,6 +651,12 @@ function buildPlan(input = {}) {
         lumpSumFutureValue(saved, planningReturn, months) +
         sipFutureValue(sipAtExpected, planningReturn, months)
     );
+=======
+    /* ---------------- Required contribution ---------------- */
+    const sipAtExpected = requiredSip(target, saved, returns.expected, months);
+    const sipAtLow = requiredSip(target, saved, returns.low, months);
+    const sipIfNoGrowth = requiredSip(target, saved, 0, months);
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
     const affordability = monthlySurplus > 0
         ? round2((sipAtExpected / monthlySurplus) * 100)
@@ -712,6 +740,7 @@ function buildPlan(input = {}) {
     }
 
     /* ---------------- Projection ---------------- */
+<<<<<<< HEAD
     const projectedAtLow = round2(
         lumpSumFutureValue(saved, Math.max(0, planningReturn - 0.02), months) +
         sipFutureValue(sipAtExpected, Math.max(0, planningReturn - 0.02), months)
@@ -720,6 +749,21 @@ function buildPlan(input = {}) {
     const projectedAtHigh = round2(
         lumpSumFutureValue(saved, planningReturn + 0.02, months) +
         sipFutureValue(sipAtExpected, planningReturn + 0.02, months)
+=======
+    const projectedAtExpected = round2(
+        lumpSumFutureValue(saved, returns.expected, months) +
+        sipFutureValue(sipAtExpected, returns.expected, months)
+    );
+
+    const projectedAtLow = round2(
+        lumpSumFutureValue(saved, returns.low, months) +
+        sipFutureValue(sipAtExpected, returns.low, months)
+    );
+
+    const projectedAtHigh = round2(
+        lumpSumFutureValue(saved, returns.high, months) +
+        sipFutureValue(sipAtExpected, returns.high, months)
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
     );
 
     const feasible = monthlySurplus <= 0
@@ -731,10 +775,17 @@ function buildPlan(input = {}) {
                 : "unrealistic";
 
     const milestones = buildMilestones(
+<<<<<<< HEAD
         inflationAdjustedTarget,
         saved,
         sipAtExpected,
         planningReturn,
+=======
+        target,
+        saved,
+        sipAtExpected,
+        returns.expected,
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         months,
         now
     );
@@ -746,6 +797,7 @@ function buildPlan(input = {}) {
         goal: {
             title: goal.title,
             target: round2(target),
+<<<<<<< HEAD
             inflationAdjustedTarget,
             saved: round2(saved),
             remaining: round2(Math.max(0, inflationAdjustedTarget - saved)),
@@ -753,6 +805,14 @@ function buildPlan(input = {}) {
             months,
             years: round2(months / 12),
             progressPercent: inflationAdjustedTarget > 0 ? round2(Math.min(100, (saved / inflationAdjustedTarget) * 100)) : 0
+=======
+            saved: round2(saved),
+            remaining: round2(target - saved),
+            deadline: goal.deadline,
+            months,
+            years: round2(months / 12),
+            progressPercent: round2((saved / target) * 100)
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         },
 
         profile: {
@@ -787,6 +847,7 @@ function buildPlan(input = {}) {
         allocation,
 
         expectedReturn: {
+<<<<<<< HEAD
             assumed: round2(expectedReturnRate),
             low: round2(Math.max(0, expectedReturnRate - 2)),
             high: round2(expectedReturnRate + 2),
@@ -799,6 +860,13 @@ function buildPlan(input = {}) {
             targetAtDeadline: inflationAdjustedTarget
         },
 
+=======
+            low: round2(returns.low * 100),
+            high: round2(returns.high * 100),
+            blended: round2(returns.expected * 100)
+        },
+
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         projection: {
             atLowReturn: projectedAtLow,
             atBlendedReturn: projectedAtExpected,
@@ -818,9 +886,12 @@ function buildPlan(input = {}) {
             sip: sipAtExpected,
             risk,
             feasible,
+<<<<<<< HEAD
             inflationRate,
             expectedReturnRate,
             inflationAdjustedTarget,
+=======
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             monthlySurplus,
             returns
         }),

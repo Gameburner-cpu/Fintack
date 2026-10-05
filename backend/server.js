@@ -22,7 +22,10 @@ const tripRoutes = require("./routes/trips");
 const aiRoutes = require("./routes/ai");
 const newsRoutes = require("./routes/news");
 const agentRoutes = require("./routes/agent");
+<<<<<<< HEAD
 const { router: assetRoutes, TYPES: ASSET_TYPES } = require("./routes/assets");
+=======
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
 const app = express();
 
@@ -128,12 +131,15 @@ app.get("/api/docs", (req, res) => {
                 "POST /auth/reset-password",
                 "POST /auth/change-password"
             ],
+<<<<<<< HEAD
             assets: [
                 "GET    /api/assets/:userId",
                 "POST   /api/assets",
                 "PUT    /api/assets/:id",
                 "DELETE /api/assets/:id"
             ],
+=======
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             transactions: [
                 "GET    /api/transactions/:userId",
                 "GET    /api/transactions/:userId/analytics",
@@ -179,7 +185,10 @@ app.use("/auth", authRoutes);
 app.use("/", authRoutes);
 
 app.use("/api/transactions", transactionRoutes);
+<<<<<<< HEAD
 app.use("/api/assets", assetRoutes);
+=======
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 app.use("/api/goals", goalRoutes);
 app.use("/api/trips", tripRoutes);
 app.use("/api/ai", aiRoutes);
@@ -192,11 +201,18 @@ app.use("/api/agent", agentRoutes);
 
 const { requireAuth } = require("./middleware/auth");
 const { buildSummary } = require("./utils/analytics");
+<<<<<<< HEAD
 const { decryptRow } = require("./utils/crypto");
 
 app.get("/api/dashboard", requireAuth, async (req, res, next) => {
     try {
         const [{ data: user }, { data: transactions }, { data: goals }, { data: assets }] =
+=======
+
+app.get("/api/dashboard", requireAuth, async (req, res, next) => {
+    try {
+        const [{ data: user }, { data: transactions }, { data: goals }] =
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
             await Promise.all([
                 supabase
                     .from("users")
@@ -206,12 +222,19 @@ app.get("/api/dashboard", requireAuth, async (req, res, next) => {
 
                 supabase
                     .from("transactions")
+<<<<<<< HEAD
                     .select("id, user_id, encrypted_payload, title, description, amount, type, category, date, created_at, updated_at")
                     .eq("user_id", req.user.id)
+=======
+                    .select("id, title, amount, type, category, date, created_at")
+                    .eq("user_id", req.user.id)
+                    .order("date", { ascending: false })
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
                     .limit(10000),
 
                 supabase
                     .from("goals")
+<<<<<<< HEAD
                     .select("id, user_id, encrypted_payload, title, target_amount, saved_amount, deadline, risk_tolerance, created_at, updated_at")
                     .eq("user_id", req.user.id),
 
@@ -238,13 +261,25 @@ app.get("/api/dashboard", requireAuth, async (req, res, next) => {
         summary.netWorth = (Number(summary.netWorth) || 0) + totalAssetValue;
         summary.totalNetWorth = summary.netWorth;
         summary.assetValue = totalAssetValue;
+=======
+                    .select("*")
+                    .eq("user_id", req.user.id)
+            ]);
+
+        const summary = buildSummary(transactions || []);
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
 
         return res.json({
             success: true,
             user,
             summary,
+<<<<<<< HEAD
             goals: decryptedGoals,
             recentTransactions: decryptedTransactions.slice(0, 10)
+=======
+            goals: goals || [],
+            recentTransactions: (transactions || []).slice(0, 10)
+>>>>>>> 5165393826f0ab820d5c6d0da355e0700cc144b8
         });
     } catch (err) {
         return next(err);
